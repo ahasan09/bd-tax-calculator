@@ -34,6 +34,57 @@ test('RULES: all 7 categories present', () => {
 
 // (later tasks append their tests below this line)
 
+// ---- Task 2: income pipeline ----
+const Y = '2025-26';
+const base = { taxYear: Y, category: 'general', isFirstTimeTaxpayer: false,
+  disabledDependents: 0, salaryPeriods: [], bonus: 0, otherIncome: 0, investment: 0, tds: 0 };
+
+test('income: full-year single salary row', () => {
+  const r = BDTax.calculateTax({ ...base,
+    salaryPeriods: [{ monthlyAmount: 30000, fromMonth: 0, toMonth: 11 }] });
+  assertEqual(r.grossSalary, 360000, 'grossSalary');
+  assertEqual(r.exemption, 120000, 'exemption');
+  assertEqual(r.taxableIncome, 240000, 'taxableIncome');
+});
+
+test('income: split rows equal one full-year row', () => {
+  const single = BDTax.calculateTax({ ...base,
+    salaryPeriods: [{ monthlyAmount: 60000, fromMonth: 0, toMonth: 11 }] });
+  const split = BDTax.calculateTax({ ...base, salaryPeriods: [
+    { monthlyAmount: 60000, fromMonth: 0, toMonth: 5 },
+    { monthlyAmount: 60000, fromMonth: 6, toMonth: 11 }] });
+  assertEqual(split.taxableIncome, single.taxableIncome, 'taxableIncome equal');
+});
+
+test('income: mid-year raise + bonus (spec mockup case)', () => {
+  const r = BDTax.calculateTax({ ...base, bonus: 60000, salaryPeriods: [
+    { monthlyAmount: 50000, fromMonth: 0, toMonth: 5 },
+    { monthlyAmount: 70000, fromMonth: 6, toMonth: 11 }] });
+  assertEqual(r.salaryFromPeriods, 720000, 'salaryFromPeriods');
+  assertEqual(r.grossSalary, 780000, 'grossSalary incl bonus');
+  assertEqual(r.exemption, 260000, 'exemption');
+  assertEqual(r.taxableIncome, 520000, 'taxableIncome');
+});
+
+test('income: exemption capped at 500,000', () => {
+  const r = BDTax.calculateTax({ ...base,
+    salaryPeriods: [{ monthlyAmount: 150000, fromMonth: 0, toMonth: 11 }] });
+  assertEqual(r.exemption, 500000, 'cap binds (1/3 would be 600,000)');
+  assertEqual(r.taxableIncome, 1300000, 'taxableIncome');
+});
+
+test('income: invalid period (from > to) excluded', () => {
+  const r = BDTax.calculateTax({ ...base,
+    salaryPeriods: [{ monthlyAmount: 50000, fromMonth: 5, toMonth: 2 }] });
+  assertEqual(r.grossSalary, 0, 'invalid row contributes nothing');
+});
+
+test('income: other income added after exemption, empty/negative clamped', () => {
+  const r = BDTax.calculateTax({ ...base, otherIncome: 100000, bonus: -50, tds: NaN });
+  assertEqual(r.grossSalary, 0);
+  assertEqual(r.taxableIncome, 100000, 'otherIncome not salary-exempted');
+});
+
 if (typeof document !== 'undefined') {
   // ---- render ----
   const ul = document.getElementById('results');

@@ -64,5 +64,29 @@ const BDTax = (() => {
     return (neg ? '-' : '') + '৳' + s;
   }
 
-  return { RULES, MONTHS, formatBDT };
+  // Coerce any user-supplied value to a non-negative finite number.
+  function num(v) {
+    const n = Number(v);
+    return isFinite(n) && n > 0 ? n : 0;
+  }
+
+  function calculateTax(inputs) {
+    const rules = RULES[inputs.taxYear] || RULES['2025-26'];
+
+    const validPeriods = (inputs.salaryPeriods || [])
+      .filter(p => Number(p.toMonth) >= Number(p.fromMonth));
+    const salaryFromPeriods = validPeriods.reduce(
+      (sum, p) => sum + num(p.monthlyAmount) * (Number(p.toMonth) - Number(p.fromMonth) + 1), 0);
+
+    const bonus = num(inputs.bonus);
+    const grossSalary = salaryFromPeriods + bonus;
+    const exemption = Math.round(
+      Math.min(grossSalary * rules.salaryExemption.fraction, rules.salaryExemption.cap));
+    const otherIncome = num(inputs.otherIncome);
+    const taxableIncome = grossSalary - exemption + otherIncome;
+
+    return { rules, salaryFromPeriods, bonus, grossSalary, exemption, otherIncome, taxableIncome };
+  }
+
+  return { RULES, MONTHS, formatBDT, calculateTax };
 })();
