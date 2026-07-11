@@ -91,13 +91,16 @@ threshold, tax is 0 and no minimum applies.
 
 ## Architecture
 
-One deliverable folder, four plain files, zero dependencies, no build step:
+One deliverable folder of plain files, zero dependencies, no build step:
 
 ```
 bd-tax-calculator/
-├── index.html    — UI (inline CSS/JS), loads tax.js
-├── tax.js        — RULES constant + calculateTax(), zero DOM code
-├── tests.html    — self-running scenario tests, loads tax.js
+├── index.html    — page markup + CSS, loads tax.js and app.js
+├── tax.js        — RULES map + calculateTax(), zero DOM code
+├── app.js        — form reading + breakdown rendering, zero tax math
+├── tests.html    — browser test page, loads tax.js and tests.js
+├── tests.js      — test cases + harness (browser and node)
+├── run-tests.mjs — headless node test runner
 └── README.md
 ```
 
