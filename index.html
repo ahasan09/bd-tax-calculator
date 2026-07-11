@@ -17,6 +17,7 @@
   header p { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.9rem; }
   main { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
          max-width: 960px; margin: 1rem auto; padding: 0 1rem; align-items: start; }
+  main > * { min-width: 0; }  /* let grid panels shrink below content width */
   @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
   .panel { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 1.25rem; }
   #breakdown { position: sticky; top: 1rem; }
@@ -30,7 +31,8 @@
   .inline { display: flex; align-items: center; gap: 0.5rem; font-weight: 400; margin-bottom: 0.6rem; }
   .inline input[type=number] { width: 4.5rem; padding: 0.3rem; border: 1px solid var(--line); border-radius: 6px; }
   h2 { font-size: 1rem; margin: 1.2rem 0 0.5rem; }
-  .salary-row { display: flex; gap: 0.4rem; align-items: center; margin-bottom: 0.5rem; }
+  .salary-row { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin-bottom: 0.5rem; }
+  .salary-row input.amount { flex: 1 1 8rem; }
   .salary-row input { flex: 1; min-width: 0; padding: 0.45rem 0.6rem;
     border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
   .salary-row select { padding: 0.45rem 0.3rem; border: 1px solid var(--line); border-radius: 6px; }
