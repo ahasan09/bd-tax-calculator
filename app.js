@@ -111,12 +111,21 @@
     h += line('<b>Annual tax</b>', `<b>${fmt(result.finalTax)}</b>`, annualSub.join('; '));
     if (result.tds > 0) h += line('− Already deducted at office (TDS)', fmt(result.tds), '');
     h += `<div class="bd-tear"></div>`;
-    if (result.refundable > 0) {
-      h += `<div class="bd-total refund"><span>Refundable / adjustable</span><span class="amt">${fmt(result.refundable)}</span></div>`;
-    } else {
-      h += `<div class="bd-total"><span>Payable</span><span class="amt">${fmt(result.netPayable)}</span></div>`;
-    }
+    const total = totalView(result);
+    h += `<div class="bd-total${total.refund ? ' refund' : ''}">` +
+      `<span>${total.label}</span><span class="amt">${total.amount}</span></div>`;
     $('breakdown').innerHTML = h;
+  }
+
+  // One place decides how the bottom line reads — pane, live region, and bar.
+  function totalView(result) {
+    const refund = result.refundable > 0;
+    return {
+      refund,
+      label: refund ? 'Refundable / adjustable' : 'Payable',
+      shortLabel: refund ? 'Refundable' : 'Payable',
+      amount: fmt(refund ? result.refundable : result.netPayable)
+    };
   }
 
   // Always-visible rebate formula with live numbers — quiet reference text.
@@ -148,14 +157,12 @@
     render(result);
     $('investmentFormula').textContent = investmentFormula(result);
     $('investmentHint').textContent = investmentHint(result);
-    $('liveTotal').textContent = result.refundable > 0
-      ? `Refundable ${fmt(result.refundable)}`
-      : `Payable ${fmt(result.netPayable)}`;
+    const total = totalView(result);
+    $('liveTotal').textContent = `${total.shortLabel} ${total.amount}`;
     const bar = $('stickyTotal');
-    const refund = result.refundable > 0;
-    bar.classList.toggle('refund', refund);
-    bar.querySelector('.lbl').textContent = refund ? 'Refundable' : 'Payable';
-    bar.querySelector('.amt').textContent = fmt(refund ? result.refundable : result.netPayable);
+    bar.classList.toggle('refund', total.refund);
+    bar.querySelector('.lbl').textContent = total.shortLabel;
+    bar.querySelector('.amt').textContent = total.amount;
     $('footerBasis').textContent = `${result.rules.label} rules per ${result.rules.basis}. ` +
       (result.rules.note ? `${result.rules.note}. ` : '');
   }

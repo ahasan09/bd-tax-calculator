@@ -140,7 +140,7 @@ never computes anything; it only renders the returned breakdown.
 3. `taxableIncome` = (grossSalary − exemption) + otherIncome
 4. `threshold` = category threshold + 50,000 × disabledDependents
 5. `slabTax` = progressive slabs applied above the threshold; output includes a
-   per-slab array `{bandAmount, rate, tax}` for the trace
+   per-slab array `{amount, rate, tax}` for the trace
 6. `rebate` = min(3% × taxableIncome, rebateRate × investment, rebateCap,
    gross tax) using the selected year's rate/cap — capped at the gross tax so
    tax never goes negative. The breakdown shows the full rebate line and then
@@ -200,7 +200,8 @@ tax advice." + link to nbr.gov.bd.
 
 ## Testing
 
-`tests.html` runs ~15 hand-computed scenarios against `calculateTax()` and
+`tests.html` runs the hand-computed scenario suite (43 tests and growing)
+against `calculateTax()` and
 renders green/red results — open in a browser to verify. Scenarios cover:
 each threshold boundary (all 4 categories, at/below/just-above), mid-year
 raise vs flat salary equivalence, each of the three rebate caps binding —
@@ -212,8 +213,9 @@ unified rebate rule (10%/৳7.5 lakh, both years), minimum-tax floor
 ## Decisions log
 
 - Two-year toggle (2025-26 filing / 2026-27 current); rules isolated in a
-  per-year RULES map. The years differ only in the rebate formula: 15% of
-  investment capped at ৳10 lakh vs 10% capped at ৳7.5 lakh (Finance Bill 2026)
+  per-year RULES map. By owner decision the Finance Bill 2026 rebate formula
+  (10% of investment, capped at ৳7.5 lakh) applies to both years — disclosed
+  in the page footer for 2025-26
 - All 7 official taxpayer categories (single dropdown, near-zero extra cost)
 - Salary entry = amount + month-range rows (handles any raise month)
 - Income scope = salary + bonus + one generic other-income field
