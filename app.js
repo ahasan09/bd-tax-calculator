@@ -135,16 +135,17 @@
 
   // Actionable advice only — how much to invest and what it saves.
   function investmentHint(result) {
+    const adv = result.investmentAdvice;
     const parts = [];
-    if (result.targetInvestment > 0) {
-      parts.push(result.rebateBreakdown.byInvestment >= result.maxUsefulRebate
-        ? `You've met the ${fmt(result.targetInvestment)} investment target — maximum rebate of ${fmt(result.maxUsefulRebate)} applied.`
-        : `Investing ${fmt(result.targetInvestment)} in total earns the maximum rebate of ${fmt(result.maxUsefulRebate)}.`);
+    if (adv.targetInvestment > 0) {
+      parts.push(result.rebateBreakdown.byInvestment >= adv.maxUsefulRebate
+        ? `You've met the ${fmt(adv.targetInvestment)} investment target — maximum rebate of ${fmt(adv.maxUsefulRebate)} applied.`
+        : `Investing ${fmt(adv.targetInvestment)} in total earns the maximum rebate of ${fmt(adv.maxUsefulRebate)}.`);
     }
-    if (result.investmentTip) {
-      parts.push(`Investing ${fmt(result.investmentTip.extraInvestment)} more would save ${fmt(result.investmentTip.saving)} in tax.`);
-      parts.push(`With the full ${fmt(result.targetInvestment)} invested, annual tax drops to ` +
-        `${fmt(result.taxIfMaxInvested)} — ≈ ${fmt(result.monthlyTdsIfMaxInvested)} per month from salary.`);
+    if (adv.tip) {
+      parts.push(`Investing ${fmt(adv.tip.extraInvestment)} more would save ${fmt(adv.tip.saving)} in tax.`);
+      parts.push(`With the full ${fmt(adv.targetInvestment)} invested, annual tax drops to ` +
+        `${fmt(adv.taxIfMaxInvested)} — ≈ ${fmt(adv.monthlyTdsIfMaxInvested)} per month from salary.`);
     }
     return parts.join(' ');
   }

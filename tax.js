@@ -113,9 +113,10 @@ const BDTax = (() => {
       byInvestment: Math.round(investment * rules.rebate.investmentRate),
       cap: rules.rebate.cap
     };
-    // Rebate can never exceed the tax itself (tax never goes negative).
-    const rebate = Math.min(
-      rebateBreakdown.byIncome, rebateBreakdown.byInvestment, rebateBreakdown.cap, grossTax);
+    // The most rebate the non-investment limbs allow — income %, absolute cap,
+    // and the tax itself (rebate never makes tax negative).
+    const maxUsefulRebate = Math.min(rebateBreakdown.byIncome, rebateBreakdown.cap, grossTax);
+    const rebate = Math.min(maxUsefulRebate, rebateBreakdown.byInvestment);
     const taxAfterRebate = grossTax - rebate;
 
     const aboveThreshold = taxableIncome > threshold;
@@ -125,37 +126,39 @@ const BDTax = (() => {
     const finalTax = aboveThreshold ? Math.max(taxAfterRebate, minimumTax) : 0;
     const minimumApplied = aboveThreshold && finalTax > taxAfterRebate;
 
-    // Would investing more actually lower the bill?
-    const maxUsefulRebate = Math.min(rebateBreakdown.byIncome, rules.rebate.cap, grossTax);
+    // Everything the UI needs to advise on investing more, bundled together.
     const canRebateFromInvestment = rules.rebate.investmentRate > 0;
     // Total investment that earns the maximum rebate (0 when nothing to rebate).
     const targetInvestment = maxUsefulRebate > 0 && canRebateFromInvestment
       ? Math.ceil(maxUsefulRebate / rules.rebate.investmentRate) : 0;
-    let investmentTip = null;
+    let tip = null;
     if (aboveThreshold && rebate < maxUsefulRebate && canRebateFromInvestment) {
       const saving = finalTax - Math.max(grossTax - maxUsefulRebate, minimumTax);
       if (saving > 0) {
-        investmentTip = {
+        tip = {
           extraInvestment: Math.ceil((maxUsefulRebate - rebate) / rules.rebate.investmentRate),
           saving
         };
       }
     }
-
-    // Annual tax if the full target investment were made, and the
-    // approximate per-month salary deduction (annual tax ÷ 12).
+    // Annual tax if the full target investment were made, and its ÷12.
     const taxIfMaxInvested = aboveThreshold
       ? Math.max(grossTax - maxUsefulRebate, minimumTax) : 0;
+    const investmentAdvice = {
+      maxUsefulRebate, targetInvestment, tip,
+      taxIfMaxInvested,
+      monthlyTdsIfMaxInvested: Math.round(taxIfMaxInvested / 12)
+    };
+
+    // Approximate per-month salary deduction (annual tax ÷ 12).
     const monthlyTds = Math.round(finalTax / 12);
-    const monthlyTdsIfMaxInvested = Math.round(taxIfMaxInvested / 12);
 
     const tds = Math.round(toNonNegativeAmount(inputs.tds));
 
     return { rules, salaryFromPeriods, bonus, grossSalary, exemption, otherIncome,
       taxableIncome, threshold, slabs, grossTax,
       rebateBreakdown, rebate, taxAfterRebate, minimumTax, minimumApplied, finalTax,
-      maxUsefulRebate, targetInvestment, investmentTip,
-      taxIfMaxInvested, monthlyTds, monthlyTdsIfMaxInvested, tds,
+      monthlyTds, investmentAdvice, tds,
       netPayable: Math.max(finalTax - tds, 0),
       refundable: Math.max(tds - finalTax, 0) };
   }

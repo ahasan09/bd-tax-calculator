@@ -163,8 +163,9 @@ No submit button. Amounts render with Bangladeshi digit grouping (৳12,34,567).
 - "First-time taxpayer" checkbox; "disabled dependents" number stepper (default 0)
 - Salary period rows: `[monthly amount] from [month ▾] to [month ▾] ✖`, month
   dropdowns ordered Jul→Jun; "+ Add period" button. One row (Jul–Jun) by default.
-- Bonus (yearly total) — hint: "festival + performance bonuses"
-- Other income — hint: "bank interest, side income etc."
+- Bonus (yearly total) — hint: "festival + performance bonuses for the year"
+- Other income — hint: "bank interest, side income etc. — added to taxable
+  income as-is"
 - Investment — hint: "DPS, sanchayapatra, life insurance premium, provident
   fund, listed shares". Below the field, an always-visible line shows the
   rebate formula with live numbers ("Rebate = lowest of 3% of taxable income
@@ -174,7 +175,7 @@ No submit button. Amounts render with Bangladeshi digit grouping (৳12,34,567).
 - TDS (yearly total deducted at office)
 
 **Breakdown pane** — full trace with plain-language labels: gross salary,
-exemption line ("⅓ of salary is tax-free, max ৳5,00,000"), taxable income,
+exemption line ("⅓ of salary is tax-free (max ৳5,00,000)"), taxable income,
 slab-by-slab tax lines, rebate, an ANNUAL TAX line (noting the minimum-tax
 floor when it applied, and "your office deducts ≈ ৳X per month" = annual
 tax ÷ 12), TDS, ending in a large PAYABLE figure (green REFUNDABLE when
