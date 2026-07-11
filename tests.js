@@ -85,6 +85,13 @@ test('income: other income added after exemption, empty/negative clamped', () =>
   assertEqual(r.taxableIncome, 100000, 'otherIncome not salary-exempted');
 });
 
+test('income: fractional inputs round to whole taka', () => {
+  const r = BDTax.calculateTax({ ...base, otherIncome: 100000.4, bonus: 999.6 });
+  assertEqual(r.bonus, 1000, 'bonus rounded');
+  assertEqual(r.otherIncome, 100000, 'otherIncome rounded');
+  assertEqual(Number.isInteger(r.taxableIncome), true, 'taxable is integer');
+});
+
 if (typeof document !== 'undefined') {
   // ---- render ----
   const ul = document.getElementById('results');
