@@ -92,6 +92,48 @@ test('income: fractional inputs round to whole taka', () => {
   assertEqual(Number.isInteger(r.taxableIncome), true, 'taxable is integer');
 });
 
+// ---- Task 3: threshold + slabs ----
+test('slabs: at threshold, zero tax', () => {
+  const r = BDTax.calculateTax({ ...base, otherIncome: 375000 });
+  assertEqual(r.grossTax, 0);
+  assertEqual(r.slabs.length, 1, 'only nil band');
+});
+
+test('slabs: just above threshold', () => {
+  // salary 48,000×12 = 576,000; exemption 192,000; taxable 384,000
+  const r = BDTax.calculateTax({ ...base,
+    salaryPeriods: [{ monthlyAmount: 48000, fromMonth: 0, toMonth: 11 }] });
+  assertEqual(r.taxableIncome, 384000);
+  assertEqual(r.grossTax, 900, '9,000 @ 10%');
+});
+
+test('slabs: three bands engaged', () => {
+  // taxable 1,300,000 → 300k@10% + 400k@15% + 225k@20% = 135,000
+  const r = BDTax.calculateTax({ ...base,
+    salaryPeriods: [{ monthlyAmount: 150000, fromMonth: 0, toMonth: 11 }] });
+  assertEqual(r.grossTax, 135000);
+  assertEqual(r.slabs.length, 4, 'nil + 3 taxed bands');
+  assertEqual(r.slabs[3], { amount: 225000, rate: 0.20, tax: 45000 }, 'partial 20% band');
+});
+
+test('slabs: top 30% band', () => {
+  // taxable 40,000,000 → 30k+60k+100k+500k + 36,425,000@30% = 11,617,500
+  const r = BDTax.calculateTax({ ...base, otherIncome: 40000000 });
+  assertEqual(r.grossTax, 11617500);
+});
+
+test('threshold: woman category', () => {
+  const r = BDTax.calculateTax({ ...base, category: 'woman', otherIncome: 425000 });
+  assertEqual(r.threshold, 425000);
+  assertEqual(r.grossTax, 0);
+});
+
+test('threshold: disabled dependent bonus', () => {
+  const r = BDTax.calculateTax({ ...base, disabledDependents: 1, otherIncome: 400000 });
+  assertEqual(r.threshold, 425000, '375,000 + 50,000');
+  assertEqual(r.grossTax, 0);
+});
+
 if (typeof document !== 'undefined') {
   // ---- render ----
   const ul = document.getElementById('results');

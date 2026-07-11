@@ -85,7 +85,23 @@ const BDTax = (() => {
     const otherIncome = Math.round(num(inputs.otherIncome));
     const taxableIncome = grossSalary - exemption + otherIncome;
 
-    return { rules, salaryFromPeriods, bonus, grossSalary, exemption, otherIncome, taxableIncome };
+    const threshold = (rules.thresholds[inputs.category] || rules.thresholds.general)
+      + rules.dependentBonus * Math.max(0, Math.floor(Number(inputs.disabledDependents) || 0));
+
+    const slabs = [{ amount: Math.min(taxableIncome, threshold), rate: 0, tax: 0 }];
+    let remaining = Math.max(taxableIncome - threshold, 0);
+    let grossTax = 0;
+    for (const s of rules.slabs) {
+      if (remaining <= 0) break;
+      const amount = Math.min(remaining, s.size);
+      const tax = Math.round(amount * s.rate);
+      slabs.push({ amount, rate: s.rate, tax });
+      grossTax += tax;
+      remaining -= amount;
+    }
+
+    return { rules, salaryFromPeriods, bonus, grossSalary, exemption, otherIncome,
+      taxableIncome, threshold, slabs, grossTax };
   }
 
   return { RULES, MONTHS, formatBDT, calculateTax };
