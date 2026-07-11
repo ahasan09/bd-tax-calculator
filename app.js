@@ -72,13 +72,23 @@
   }
 
   // ---- render breakdown pane ----
+  const pct = x => (x * 100).toFixed(0) + '%';
+
+  // "3% of taxable income (৳X), 10% of investment (৳Y), or ৳7,50,000" —
+  // shared by the pane's rebate line and the investment-field formula.
+  function rebateCandidatesText(result) {
+    const rb = result.rules.rebate;
+    return `${pct(rb.incomeRate)} of taxable income (${fmt(result.rebateBreakdown.byIncome)}), ` +
+      `${pct(rb.investmentRate)} of investment (${fmt(result.rebateBreakdown.byInvestment)}), ` +
+      `or ${fmt(rb.cap)}`;
+  }
+
   function line(lbl, amt, sub) {
     return `<div class="bd-line"><span class="lbl">${lbl}${sub ? `<small>${sub}</small>` : ''}</span>
             <span class="amt">${amt}</span></div>`;
   }
 
   function render(result) {
-    const pct = x => (x * 100).toFixed(0) + '%';
     let h = '<h2 class="bd-title">Your tax, step by step</h2>';
     h += line('Gross salary', fmt(result.grossSalary),
       result.bonus > 0 ? `includes ${fmt(result.bonus)} bonus` : '');
@@ -94,9 +104,7 @@
     });
     h += line('<b>Tax before rebate</b>', `<b>${fmt(result.grossTax)}</b>`, '');
     if (result.rebate > 0) h += line('− Investment rebate', fmt(result.rebate),
-      `lowest of ${pct(result.rules.rebate.incomeRate)} of income (${fmt(result.rebateBreakdown.byIncome)}), ` +
-      `${pct(result.rules.rebate.investmentRate)} of investment (${fmt(result.rebateBreakdown.byInvestment)}), ` +
-      `${fmt(result.rebateBreakdown.cap)}`);
+      `lowest of ${rebateCandidatesText(result)}`);
     const annualSub = [];
     if (result.minimumApplied) annualSub.push(`minimum tax — income above the tax-free limit pays at least ${fmt(result.minimumTax)}`);
     if (result.finalTax > 0) annualSub.push(`your office deducts ≈ ${fmt(result.monthlyTds)} per month`);
@@ -113,11 +121,7 @@
 
   // Always-visible rebate formula with live numbers — quiet reference text.
   function investmentFormula(result) {
-    const pct = x => (x * 100).toFixed(0) + '%';
-    const rb = result.rules.rebate;
-    return `Rebate = lowest of ${pct(rb.incomeRate)} of taxable income (${fmt(result.rebateBreakdown.byIncome)}), ` +
-      `${pct(rb.investmentRate)} of investment (${fmt(result.rebateBreakdown.byInvestment)}), or ${fmt(rb.cap)} ` +
-      `→ your rebate: ${fmt(result.rebate)}.`;
+    return `Rebate = lowest of ${rebateCandidatesText(result)} → your rebate: ${fmt(result.rebate)}.`;
   }
 
   // Actionable advice only — how much to invest and what it saves.

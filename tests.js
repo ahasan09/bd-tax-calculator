@@ -144,6 +144,30 @@ test('threshold: freedom fighter / July Warrior category (525,000)', () => {
   assertEqual(above.finalTax, 7500, 'above the minimum-tax floor');
 });
 
+test('threshold: below threshold is zero for every category', () => {
+  for (const [cat, limit] of [['woman', 425000], ['thirdGender', 500000], ['freedomFighter', 525000]]) {
+    const result = BDTax.calculateTax({ ...base, category: cat, otherIncome: limit - 50000 });
+    assertEqual(result.finalTax, 0, cat + ' below threshold');
+  }
+});
+
+test('threshold: just above floors to minimum (woman, July Warrior)', () => {
+  const w = BDTax.calculateTax({ ...base, category: 'woman', otherIncome: 430000 });
+  assertEqual(w.grossTax, 500, '5,000 @ 10%');
+  assertEqual(w.finalTax, 5000, 'floored');
+  const j = BDTax.calculateTax({ ...base, category: 'julyWarrior', otherIncome: 530000 });
+  assertEqual(j.grossTax, 500, '5,000 @ 10%');
+  assertEqual(j.finalTax, 5000, 'floored');
+});
+
+test('rebate: 3%-of-income limb binds', () => {
+  // taxable 1,300,000 → byIncome 39,000; investment 500,000 → byInvestment 50,000
+  const result = BDTax.calculateTax({ ...base, investment: 500000,
+    salaryPeriods: [{ monthlyAmount: 150000, fromMonth: 0, toMonth: 11 }] });
+  assertEqual(result.rebate, 39000, '3% of income is the lowest candidate');
+  assertEqual(result.finalTax, 96000);
+});
+
 test('threshold: disabled dependent bonus', () => {
   const r = BDTax.calculateTax({ ...base, disabledDependents: 1, otherIncome: 400000 });
   assertEqual(r.threshold, 425000, '375,000 + 50,000');
