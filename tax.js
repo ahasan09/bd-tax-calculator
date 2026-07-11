@@ -124,6 +124,9 @@ const BDTax = (() => {
 
     // Would investing more actually lower the bill?
     const maxUsefulRebate = Math.min(rebateBreakdown.byIncome, rules.rebate.cap, grossTax);
+    // Total investment that earns the maximum rebate (0 when nothing to rebate).
+    const targetInvestment = maxUsefulRebate > 0
+      ? Math.ceil(maxUsefulRebate / rules.rebate.investmentRate) : 0;
     let investmentTip = null;
     if (aboveThreshold && rebate < maxUsefulRebate) {
       const saving = finalTax - Math.max(grossTax - maxUsefulRebate, minimumTax);
@@ -140,7 +143,7 @@ const BDTax = (() => {
     return { rules, salaryFromPeriods, bonus, grossSalary, exemption, otherIncome,
       taxableIncome, threshold, slabs, grossTax,
       rebateBreakdown, rebate, taxAfterRebate, minimumTax, minimumApplied, finalTax,
-      investmentTip, tds,
+      maxUsefulRebate, targetInvestment, investmentTip, tds,
       netPayable: Math.max(finalTax - tds, 0),
       refundable: Math.max(tds - finalTax, 0) };
   }

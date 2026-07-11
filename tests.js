@@ -212,6 +212,21 @@ test('final: no tip when floor makes investing useless', () => {
   assertEqual(r.investmentTip, null);
 });
 
+test('final: always exposes max useful rebate and target investment', () => {
+  // maxUseful = min(3%×1,300,000 = 39,000; 750,000; grossTax 135,000) = 39,000
+  // target = 39,000 / 10% = 390,000 — regardless of what is currently invested
+  const r = BDTax.calculateTax({ ...base, investment: 200000,
+    salaryPeriods: [{ monthlyAmount: 150000, fromMonth: 0, toMonth: 11 }] });
+  assertEqual(r.maxUsefulRebate, 39000);
+  assertEqual(r.targetInvestment, 390000);
+});
+
+test('final: target investment zero when there is no tax to rebate', () => {
+  const r = BDTax.calculateTax({ ...base });
+  assertEqual(r.maxUsefulRebate, 0);
+  assertEqual(r.targetInvestment, 0);
+});
+
 test('final: all-zero input is all zeros, no NaN', () => {
   const r = BDTax.calculateTax({ ...base });
   assertEqual([r.grossSalary, r.taxableIncome, r.grossTax, r.rebate, r.finalTax,

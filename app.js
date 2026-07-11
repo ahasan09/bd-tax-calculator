@@ -108,15 +108,30 @@
     $('breakdown').innerHTML = h;
   }
 
+  // Always-visible rebate formula (live numbers) + how much to invest in
+  // total for the maximum rebate. All values come from the engine.
+  function investmentHint(r) {
+    const pct = x => (x * 100).toFixed(0) + '%';
+    const rb = r.rules.rebate;
+    let text = `Rebate = lowest of ${pct(rb.incomeRate)} of taxable income (${fmt(r.rebateBreakdown.byIncome)}), ` +
+      `${pct(rb.investmentRate)} of investment (${fmt(r.rebateBreakdown.byInvestment)}), or ${fmt(rb.cap)} ` +
+      `→ your rebate: ${fmt(r.rebate)}.`;
+    if (r.targetInvestment > 0) {
+      text += ` Investing ${fmt(r.targetInvestment)} in total earns the maximum rebate of ${fmt(r.maxUsefulRebate)}.`;
+    }
+    if (r.investmentTip) {
+      text += ` Investing ${fmt(r.investmentTip.extraInvestment)} more would save ${fmt(r.investmentTip.saving)} in tax.`;
+    }
+    return text;
+  }
+
   // ---- main loop ----
   function recalc() {
     const inputs = readInputs();
     $('salaryWarning').textContent = salaryWarnings(inputs.salaryPeriods);
     const r = BDTax.calculateTax(inputs);
     render(r);
-    $('investmentHint').textContent = r.investmentTip
-      ? `Investing ${fmt(r.investmentTip.extraInvestment)} more would save ${fmt(r.investmentTip.saving)} in tax.`
-      : '';
+    $('investmentHint').textContent = investmentHint(r);
     $('footerBasis').textContent = `${r.rules.label} rules per ${r.rules.basis}. `;
   }
 

@@ -166,8 +166,11 @@ No submit button. Amounts render with Bangladeshi digit grouping (৳12,34,567).
 - Bonus (yearly total) — hint: "festival + performance bonuses"
 - Other income — hint: "bank interest, side income etc."
 - Investment — hint: "DPS, sanchayapatra, life insurance premium, provident
-  fund, listed shares". Helper line when the 3% cap is not yet reached:
-  "Investing ৳X more would save ৳Y".
+  fund, listed shares". Below the field, an always-visible line shows the
+  rebate formula with live numbers ("Rebate = lowest of 3% of taxable income
+  (৳A), 10% of investment (৳B), or ৳7,50,000 → your rebate: ৳R") and the
+  total investment that earns the maximum rebate; plus "Investing ৳X more
+  would save ৳Y in tax" when more investing would genuinely help.
 - TDS (yearly total deducted at office)
 
 **Breakdown pane** — full trace with plain-language labels: gross salary,
