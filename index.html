@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bangladesh Income Tax Calculator</title>
+<style>
+  :root {
+    --ink: #1f2937; --muted: #6b7280; --line: #e5e7eb;
+    --accent: #0f766e; --warn: #b45309; --good: #15803d; --bg: #f8fafc;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+         color: var(--ink); background: var(--bg); line-height: 1.45; }
+  header { text-align: center; padding: 1.5rem 1rem 0.5rem; }
+  header h1 { margin: 0; font-size: 1.5rem; }
+  header p { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.9rem; }
+  main { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+         max-width: 960px; margin: 1rem auto; padding: 0 1rem; align-items: start; }
+  @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+  .panel { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 1.25rem; }
+  #breakdown { position: sticky; top: 1rem; }
+  fieldset { border: 1px solid var(--line); border-radius: 8px; margin: 0 0 1rem; padding: 0.6rem 0.8rem; }
+  legend { font-size: 0.8rem; color: var(--muted); padding: 0 0.3rem; }
+  label.field { display: block; margin-bottom: 0.9rem; font-weight: 600; font-size: 0.95rem; }
+  label.field input[type=number], label.field select {
+    display: block; width: 100%; margin-top: 0.25rem; padding: 0.45rem 0.6rem;
+    border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; font-weight: 400; }
+  .hint { font-weight: 400; font-size: 0.8rem; color: var(--muted); display: block; }
+  .inline { display: flex; align-items: center; gap: 0.5rem; font-weight: 400; margin-bottom: 0.6rem; }
+  .inline input[type=number] { width: 4.5rem; padding: 0.3rem; border: 1px solid var(--line); border-radius: 6px; }
+  h2 { font-size: 1rem; margin: 1.2rem 0 0.5rem; }
+  .salary-row { display: flex; gap: 0.4rem; align-items: center; margin-bottom: 0.5rem; }
+  .salary-row input { flex: 1; min-width: 0; padding: 0.45rem 0.6rem;
+    border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
+  .salary-row select { padding: 0.45rem 0.3rem; border: 1px solid var(--line); border-radius: 6px; }
+  .salary-row button { border: none; background: none; color: var(--warn);
+    font-size: 1.1rem; cursor: pointer; padding: 0.2rem; }
+  #addRow { background: none; border: 1px dashed var(--accent); color: var(--accent);
+    border-radius: 6px; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; }
+  .warn { color: var(--warn); font-size: 0.85rem; min-height: 1.2em; margin: 0.3rem 0 0; }
+  .tip { color: var(--accent); font-size: 0.85rem; margin: 0.3rem 0 0; }
+  /* breakdown pane */
+  .bd-line { display: flex; justify-content: space-between; gap: 1rem;
+    padding: 0.3rem 0; font-size: 0.95rem; }
+  .bd-line .lbl { color: var(--ink); }
+  .bd-line .lbl small { color: var(--muted); display: block; font-size: 0.75rem; }
+  .bd-line .amt { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .bd-sub { color: var(--muted); font-size: 0.85rem; }
+  .bd-rule { border-top: 1px solid var(--line); margin: 0.5rem 0; }
+  .bd-total { font-size: 1.25rem; font-weight: 700; display: flex;
+    justify-content: space-between; padding-top: 0.6rem; }
+  .bd-total.refund { color: var(--good); }
+  footer { text-align: center; color: var(--muted); font-size: 0.8rem;
+    padding: 1.5rem 1rem 2rem; }
+  footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Bangladesh Income Tax Calculator</h1>
+  <p>For salaried people — everything calculates live, nothing is stored</p>
+</header>
+<main>
+  <form class="panel" id="form" autocomplete="off">
+    <fieldset>
+      <legend>Tax year</legend>
+      <label class="inline"><input type="radio" name="taxYear" value="2025-26" checked>
+        2025-26 — return filing now (Jul–Nov 2026)</label>
+      <label class="inline"><input type="radio" name="taxYear" value="2026-27">
+        2026-27 — current year (planning)</label>
+    </fieldset>
+
+    <label class="field">Taxpayer category
+      <select id="category">
+        <option value="general">General (male)</option>
+        <option value="woman">Woman</option>
+        <option value="senior">Senior citizen (65+)</option>
+        <option value="thirdGender">Third gender</option>
+        <option value="disabled">Person with disability</option>
+        <option value="freedomFighter">War-wounded freedom fighter</option>
+        <option value="julyWarrior">July Warrior</option>
+      </select>
+    </label>
+    <label class="inline"><input type="checkbox" id="firstTime"> First-time taxpayer
+      <span class="hint">(minimum tax ৳1,000 instead of ৳5,000)</span></label>
+    <label class="inline">Disabled dependents
+      <input type="number" id="dependents" min="0" step="1" value="0">
+      <span class="hint">+৳50,000 tax-free each</span></label>
+
+    <h2>Monthly salary</h2>
+    <div id="salaryRows"></div>
+    <button type="button" id="addRow">+ Add period</button>
+    <p class="warn" id="salaryWarning"></p>
+
+    <h2>Other amounts (yearly totals)</h2>
+    <label class="field">Bonus
+      <span class="hint">festival + performance bonuses for the year</span>
+      <input type="number" id="bonus" min="0" placeholder="0">
+    </label>
+    <label class="field">Other income
+      <span class="hint">bank interest, side income etc. — added to taxable income as-is</span>
+      <input type="number" id="otherIncome" min="0" placeholder="0">
+    </label>
+    <label class="field">Investment eligible for rebate
+      <span class="hint">DPS, sanchayapatra, life insurance premium, provident fund, listed shares</span>
+      <input type="number" id="investment" min="0" placeholder="0">
+      <span class="tip" id="investmentHint"></span>
+    </label>
+    <label class="field">Tax already deducted at office (TDS)
+      <span class="hint">total tax your employer withheld this year</span>
+      <input type="number" id="tds" min="0" placeholder="0">
+    </label>
+  </form>
+
+  <aside class="panel" id="breakdown" aria-live="polite"></aside>
+</main>
+<footer>
+  <span id="footerBasis"></span>
+  Estimates only — not tax advice.
+  Official source: <a href="https://nbr.gov.bd" target="_blank" rel="noopener">nbr.gov.bd</a>
+</footer>
+<script src="tax.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
