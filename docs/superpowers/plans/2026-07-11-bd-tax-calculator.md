@@ -20,7 +20,7 @@
 - English UI text with explanatory hints (e.g. "DPS, sanchayapatra, life insurance premium")
 - Fiscal year runs July–June; month indexes everywhere are fiscal: `0 = Jul … 11 = Jun`
 - Footer must include: "Estimates only — not tax advice." and a link to `https://nbr.gov.bd`
-- Repo root is `/Users/abulhasan/Programming/Personal_Github_Projects/bd-tax-calculator` — all paths below are relative to it
+- Repo root is the project directory (`bd-tax-calculator/`) — all paths below are relative to it
 
 ---
 
