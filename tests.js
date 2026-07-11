@@ -227,6 +227,30 @@ test('final: target investment zero when there is no tax to rebate', () => {
   assertEqual(r.targetInvestment, 0);
 });
 
+test('final: monthly office deduction and tax after max investment', () => {
+  // finalTax 115,000 → ≈9,583/month; with full 390,000 invested the rebate
+  // becomes 39,000 → tax 96,000 → 8,000/month
+  const r = BDTax.calculateTax({ ...base, investment: 200000,
+    salaryPeriods: [{ monthlyAmount: 150000, fromMonth: 0, toMonth: 11 }] });
+  assertEqual(r.monthlyTds, 9583);
+  assertEqual(r.taxIfMaxInvested, 96000);
+  assertEqual(r.monthlyTdsIfMaxInvested, 8000);
+});
+
+test('final: minimum-tax floor holds after max investment', () => {
+  // grossTax 900 → even the full rebate leaves the 5,000 floor → 417/month
+  const r = BDTax.calculateTax({ ...base,
+    salaryPeriods: [{ monthlyAmount: 48000, fromMonth: 0, toMonth: 11 }] });
+  assertEqual(r.taxIfMaxInvested, 5000);
+  assertEqual(r.monthlyTds, 417);
+  assertEqual(r.monthlyTdsIfMaxInvested, 417);
+});
+
+test('final: monthly figures zero at zero income', () => {
+  const r = BDTax.calculateTax({ ...base });
+  assertEqual([r.monthlyTds, r.taxIfMaxInvested, r.monthlyTdsIfMaxInvested], [0, 0, 0]);
+});
+
 test('final: all-zero input is all zeros, no NaN', () => {
   const r = BDTax.calculateTax({ ...base });
   assertEqual([r.grossSalary, r.taxableIncome, r.grossTax, r.rebate, r.finalTax,

@@ -175,8 +175,11 @@ No submit button. Amounts render with Bangladeshi digit grouping (৳12,34,567).
 
 **Breakdown pane** — full trace with plain-language labels: gross salary,
 exemption line ("⅓ of salary is tax-free, max ৳5,00,000"), taxable income,
-slab-by-slab tax lines, rebate, minimum-tax line (only when the floor applied),
-TDS, ending in a large PAYABLE figure (green REFUNDABLE when negative).
+slab-by-slab tax lines, rebate, an ANNUAL TAX line (noting the minimum-tax
+floor when it applied, and "your office deducts ≈ ৳X per month" = annual
+tax ÷ 12), TDS, ending in a large PAYABLE figure (green REFUNDABLE when
+negative). The investment hint also states the after-max-investment
+outcome: annual tax at full target investment and its per-month deduction.
 
 **Footer** — names the selected year's legal basis ("FY 2025-26 per Finance
 Ordinance 2025" / "FY 2026-27 per Finance Bill 2026"). "Estimates only — not

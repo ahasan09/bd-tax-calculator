@@ -138,12 +138,20 @@ const BDTax = (() => {
       }
     }
 
+    // Annual tax if the full target investment were made, and the
+    // approximate per-month salary deduction (annual tax ÷ 12).
+    const taxIfMaxInvested = aboveThreshold
+      ? Math.max(grossTax - maxUsefulRebate, minimumTax) : 0;
+    const monthlyTds = Math.round(finalTax / 12);
+    const monthlyTdsIfMaxInvested = Math.round(taxIfMaxInvested / 12);
+
     const tds = Math.round(num(inputs.tds));
 
     return { rules, salaryFromPeriods, bonus, grossSalary, exemption, otherIncome,
       taxableIncome, threshold, slabs, grossTax,
       rebateBreakdown, rebate, taxAfterRebate, minimumTax, minimumApplied, finalTax,
-      maxUsefulRebate, targetInvestment, investmentTip, tds,
+      maxUsefulRebate, targetInvestment, investmentTip,
+      taxIfMaxInvested, monthlyTds, monthlyTdsIfMaxInvested, tds,
       netPayable: Math.max(finalTax - tds, 0),
       refundable: Math.max(tds - finalTax, 0) };
   }

@@ -97,8 +97,10 @@
       `lowest of ${pct(r.rules.rebate.incomeRate)} of income (${fmt(r.rebateBreakdown.byIncome)}), ` +
       `${pct(r.rules.rebate.investmentRate)} of investment (${fmt(r.rebateBreakdown.byInvestment)}), ` +
       `${fmt(r.rebateBreakdown.cap)}`);
-    if (r.minimumApplied) h += line('Minimum tax applies', fmt(r.finalTax),
-      `income above the tax-free limit pays at least ${fmt(r.minimumTax)}`);
+    const annualSub = [];
+    if (r.minimumApplied) annualSub.push(`minimum tax — income above the tax-free limit pays at least ${fmt(r.minimumTax)}`);
+    if (r.finalTax > 0) annualSub.push(`your office deducts ≈ ${fmt(r.monthlyTds)} per month`);
+    h += line('<b>Annual tax</b>', `<b>${fmt(r.finalTax)}</b>`, annualSub.join('; '));
     if (r.tds > 0) h += line('− Already deducted at office (TDS)', fmt(r.tds), '');
     h += `<div class="bd-tear"></div>`;
     if (r.refundable > 0) {
@@ -126,6 +128,8 @@
     }
     if (r.investmentTip) {
       parts.push(`Investing ${fmt(r.investmentTip.extraInvestment)} more would save ${fmt(r.investmentTip.saving)} in tax.`);
+      parts.push(`With the full ${fmt(r.targetInvestment)} invested, annual tax drops to ` +
+        `${fmt(r.taxIfMaxInvested)} — ≈ ${fmt(r.monthlyTdsIfMaxInvested)} per month from salary.`);
     }
     return parts.join(' ');
   }
