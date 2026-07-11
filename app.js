@@ -124,7 +124,9 @@
   function investmentHint(r) {
     const parts = [];
     if (r.targetInvestment > 0) {
-      parts.push(`Investing ${fmt(r.targetInvestment)} in total earns the maximum rebate of ${fmt(r.maxUsefulRebate)}.`);
+      parts.push(r.rebateBreakdown.byInvestment >= r.maxUsefulRebate
+        ? `You've met the ${fmt(r.targetInvestment)} investment target — maximum rebate of ${fmt(r.maxUsefulRebate)} applied.`
+        : `Investing ${fmt(r.targetInvestment)} in total earns the maximum rebate of ${fmt(r.maxUsefulRebate)}.`);
     }
     if (r.investmentTip) {
       parts.push(`Investing ${fmt(r.investmentTip.extraInvestment)} more would save ${fmt(r.investmentTip.saving)} in tax.`);
@@ -150,7 +152,8 @@
     bar.classList.toggle('refund', refund);
     bar.querySelector('.lbl').textContent = refund ? 'Refundable' : 'Payable';
     bar.querySelector('.amt').textContent = fmt(refund ? r.refundable : r.netPayable);
-    $('footerBasis').textContent = `${r.rules.label} rules per ${r.rules.basis}. `;
+    $('footerBasis').textContent = `${r.rules.label} rules per ${r.rules.basis}. ` +
+      (r.rules.note ? `${r.rules.note}. ` : '');
   }
 
   $('addRow').addEventListener('click', () => { addRow(); recalc(); });
@@ -160,7 +163,7 @@
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(entries => {
       $('stickyTotal').classList.toggle('pane-visible', entries[0].isIntersecting);
-    }).observe($('breakdown'));
+    }, { threshold: 0.15 }).observe($('breakdown'));
   }
 
   addRow();       // start with one full-year row

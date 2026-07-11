@@ -39,8 +39,9 @@ const BDTax = (() => {
       // Owner's decision (2026-07-11): apply the Finance Bill 2026 rebate
       // (10% / 750k) to this year too. §78 ITA 2023 as consolidated on
       // bdlaws reads 15% / 1,000,000 for this filing year — restore those
-      // two numbers here to revert.
+      // two numbers here to revert. `note` is surfaced in the page footer.
       rebate: { incomeRate: 0.03, investmentRate: 0.10, cap: 750000 },
+      note: 'Investment rebate applied at the Finance Bill 2026 rate (10%, max ৳7,50,000)',
       minimumTax: MINIMUM_TAX
     },
     '2026-27': {
@@ -125,10 +126,10 @@ const BDTax = (() => {
     // Would investing more actually lower the bill?
     const maxUsefulRebate = Math.min(rebateBreakdown.byIncome, rules.rebate.cap, grossTax);
     // Total investment that earns the maximum rebate (0 when nothing to rebate).
-    const targetInvestment = maxUsefulRebate > 0
+    const targetInvestment = maxUsefulRebate > 0 && rules.rebate.investmentRate > 0
       ? Math.ceil(maxUsefulRebate / rules.rebate.investmentRate) : 0;
     let investmentTip = null;
-    if (aboveThreshold && rebate < maxUsefulRebate) {
+    if (aboveThreshold && rebate < maxUsefulRebate && rules.rebate.investmentRate > 0) {
       const saving = finalTax - Math.max(grossTax - maxUsefulRebate, minimumTax);
       if (saving > 0) {
         investmentTip = {
