@@ -141,11 +141,24 @@
     $('liveTotal').textContent = r.refundable > 0
       ? `Refundable ${fmt(r.refundable)}`
       : `Payable ${fmt(r.netPayable)}`;
+    const bar = $('stickyTotal');
+    const refund = r.refundable > 0;
+    bar.classList.toggle('refund', refund);
+    bar.querySelector('.lbl').textContent = refund ? 'Refundable' : 'Payable';
+    bar.querySelector('.amt').textContent = fmt(refund ? r.refundable : r.netPayable);
     $('footerBasis').textContent = `${r.rules.label} rules per ${r.rules.basis}. `;
   }
 
   $('addRow').addEventListener('click', () => { addRow(); recalc(); });
   $('form').addEventListener('input', recalc);
+
+  // Hide the mobile total bar while the real breakdown pane is on screen.
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(entries => {
+      $('stickyTotal').classList.toggle('pane-visible', entries[0].isIntersecting);
+    }).observe($('breakdown'));
+  }
+
   addRow();       // start with one full-year row
   recalc();       // initial render (all zeros)
 })();

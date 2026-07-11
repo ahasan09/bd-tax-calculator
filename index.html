@@ -73,6 +73,19 @@
   footer { text-align: center; color: var(--muted); font-size: 0.8rem;
     padding: 1.5rem 1rem 2rem; }
   footer a { color: var(--accent); }
+  /* mobile-only sticky total bar; desktop already keeps the pane in view */
+  .sticky-total { display: none; }
+  @media (max-width: 800px) {
+    body { padding-bottom: 3.5rem; }
+    .sticky-total { position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 0.6rem 1rem; background: #fff; border-top: 2px solid var(--accent);
+      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08); font-weight: 700; }
+    .sticky-total .amt { font-family: var(--num); font-size: 1.25rem;
+      font-variant-numeric: tabular-nums; color: var(--accent); }
+    .sticky-total.refund, .sticky-total.refund .amt { color: var(--good); }
+    .sticky-total.pane-visible { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -136,6 +149,9 @@
   <aside class="panel" id="breakdown"></aside>
   <span id="liveTotal" class="sr-only" aria-live="polite"></span>
 </main>
+<div id="stickyTotal" class="sticky-total" aria-hidden="true">
+  <span class="lbl">Payable</span><span class="amt">৳0</span>
+</div>
 <footer>
   <span id="footerBasis"></span>
   Estimates only — not tax advice.
