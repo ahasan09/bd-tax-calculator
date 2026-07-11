@@ -7,7 +7,10 @@ No backend, no database, nothing stored — open `index.html` and type.
 - Income year **2025-26** (AY 2026-27) — the return filed Jul–Nov 2026,
   per the Finance Ordinance 2025
 - Income year **2026-27** (AY 2027-28) — the running year, per the
-  Finance Bill 2026 (reduced investment rebate: 10% / ৳7.5 lakh cap)
+  Finance Bill 2026
+
+Both years use the Finance Bill 2026 investment rebate: lowest of 3% of
+taxable income, 10% of eligible investment, or ৳7,50,000.
 
 **Features:** all official taxpayer categories, mid-year salary changes via
 month-range rows, bonus / other income / investment / TDS, minimum-tax and

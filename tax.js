@@ -7,7 +7,7 @@ const BDTax = (() => {
   const MONTHS = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
 
   // Shared between the two supported years (Finance Ordinance 2025 legislated
-  // both; Finance Bill 2026 changed only the investment rebate).
+  // both; the Finance Bill 2026 rebate rule is applied to both years).
   const THRESHOLDS = {
     general: 375000,
     woman: 425000,
@@ -36,7 +36,11 @@ const BDTax = (() => {
       dependentBonus: DEPENDENT_BONUS,
       slabs: SLABS,
       salaryExemption: SALARY_EXEMPTION,
-      rebate: { incomeRate: 0.03, investmentRate: 0.15, cap: 1000000 },
+      // Owner's decision (2026-07-11): apply the Finance Bill 2026 rebate
+      // (10% / 750k) to this year too. §78 ITA 2023 as consolidated on
+      // bdlaws reads 15% / 1,000,000 for this filing year — restore those
+      // two numbers here to revert.
+      rebate: { incomeRate: 0.03, investmentRate: 0.10, cap: 750000 },
       minimumTax: MINIMUM_TAX
     },
     '2026-27': {

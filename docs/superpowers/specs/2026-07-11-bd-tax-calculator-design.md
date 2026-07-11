@@ -46,7 +46,8 @@ one new entry.
 ## Tax rules
 
 All values live in a `RULES` map keyed by income year (`"2025-26"`,
-`"2026-27"`). The two years share everything except the investment rebate.
+`"2026-27"`). The two years currently share all values (see rebate note
+below); the per-year structure remains so future years can diverge.
 
 **Tax-free thresholds (both years)**
 
@@ -74,16 +75,19 @@ dependent on top of their category threshold.
 **Employment income exemption:** the lower of ⅓ of total employment income
 (salary periods + bonus) or BDT 500,000 is exempt.
 
-**Investment rebate** (the one rule that differs between years):
+**Investment rebate** (same formula both years):
 
 | Income year | Formula — lowest of |
 |---|---|
-| 2025-26 (AY 2026-27) | 3% of taxable income · **15%** of eligible investment · **BDT 1,000,000** |
+| 2025-26 (AY 2026-27) | 3% of taxable income · **10%** of eligible investment · **BDT 750,000** |
 | 2026-27 (AY 2027-28) | 3% of taxable income · **10%** of eligible investment · **BDT 750,000** |
 
-(2025-26 formula confirmed against §78, Income Tax Act 2023 as amended, on
-bdlaws.minlaw.gov.bd; 2026-27 formula per Finance Bill 2026 budget coverage —
-re-verify against the NBR paripatra for AY 2027-28 when published.)
+(Owner's decision, 2026-07-11: the Finance Bill 2026 rebate rule is applied
+to both years. Note: §78, Income Tax Act 2023 as consolidated on
+bdlaws.minlaw.gov.bd reads 15% / BDT 1,000,000 for the 2025-26 filing year —
+if strict statutory behavior is ever wanted, restore those two numbers in
+`RULES['2025-26'].rebate`. Re-verify against the NBR paripatra when
+published.)
 
 **Minimum tax:** if taxable income exceeds the threshold, tax after rebate is
 floored at BDT 5,000 — or BDT 1,000 for a first-time taxpayer. At or below the

@@ -22,8 +22,8 @@ test('RULES: general threshold both years', () => {
   assertEqual(BDTax.RULES['2025-26'].thresholds.general, 375000);
   assertEqual(BDTax.RULES['2026-27'].thresholds.general, 375000);
 });
-test('RULES: rebate differs by year', () => {
-  assertEqual(BDTax.RULES['2025-26'].rebate, { incomeRate: 0.03, investmentRate: 0.15, cap: 1000000 });
+test('RULES: same rebate rule both years (10% / 750k)', () => {
+  assertEqual(BDTax.RULES['2025-26'].rebate, { incomeRate: 0.03, investmentRate: 0.10, cap: 750000 });
   assertEqual(BDTax.RULES['2026-27'].rebate, { incomeRate: 0.03, investmentRate: 0.10, cap: 750000 });
 });
 test('RULES: all 7 categories present', () => {
@@ -158,34 +158,34 @@ test('final: first-time taxpayer minimum is 1,000', () => {
 });
 
 test('final: spec mockup — rebate then floor', () => {
-  // taxable 520,000, grossTax 14,500; rebate candidates 15,600 / 18,000 / 1M,
-  // capped by grossTax → 14,500; after rebate 0 → floor 5,000
+  // taxable 520,000, grossTax 14,500; rebate candidates 15,600 / 12,000 / 750k
+  // → 12,000; after rebate 2,500 → floor 5,000
   const r = BDTax.calculateTax({ ...base, bonus: 60000, investment: 120000, salaryPeriods: [
     { monthlyAmount: 50000, fromMonth: 0, toMonth: 5 },
     { monthlyAmount: 70000, fromMonth: 6, toMonth: 11 }] });
-  assertEqual(r.rebate, 14500);
+  assertEqual(r.rebate, 12000);
   assertEqual(r.finalTax, 5000);
   assertEqual(r.minimumApplied, true);
 });
 
-test('final: year toggle changes rebate (15% vs 10%)', () => {
+test('final: rebate rule identical across years (10%)', () => {
   // taxable 1,300,000, grossTax 135,000, investment 200,000
   const inputs = { ...base, investment: 200000,
     salaryPeriods: [{ monthlyAmount: 150000, fromMonth: 0, toMonth: 11 }] };
   const r25 = BDTax.calculateTax(inputs);
   const r26 = BDTax.calculateTax({ ...inputs, taxYear: '2026-27' });
-  assertEqual(r25.rebate, 30000, '15% of 200,000 binds');
-  assertEqual(r25.finalTax, 105000);
-  assertEqual(r26.rebate, 20000, '10% of 200,000 binds');
+  assertEqual(r25.rebate, 20000, '10% of 200,000 binds');
+  assertEqual(r25.finalTax, 115000);
+  assertEqual(r26.rebate, 20000, 'same in 2026-27');
   assertEqual(r26.finalTax, 115000);
 });
 
-test('final: absolute rebate caps (10 lakh vs 7.5 lakh)', () => {
+test('final: absolute rebate cap (7.5 lakh, both years)', () => {
   const inputs = { ...base, otherIncome: 40000000, investment: 10000000 };
   const r25 = BDTax.calculateTax(inputs);
   const r26 = BDTax.calculateTax({ ...inputs, taxYear: '2026-27' });
-  assertEqual(r25.rebate, 1000000);
-  assertEqual(r25.finalTax, 10617500);
+  assertEqual(r25.rebate, 750000);
+  assertEqual(r25.finalTax, 10867500);
   assertEqual(r26.rebate, 750000);
   assertEqual(r26.finalTax, 10867500);
 });
@@ -193,16 +193,16 @@ test('final: absolute rebate caps (10 lakh vs 7.5 lakh)', () => {
 test('final: TDS refund', () => {
   const r = BDTax.calculateTax({ ...base, investment: 200000, tds: 120000,
     salaryPeriods: [{ monthlyAmount: 150000, fromMonth: 0, toMonth: 11 }] });
-  assertEqual(r.finalTax, 105000);
+  assertEqual(r.finalTax, 115000);
   assertEqual(r.netPayable, 0);
-  assertEqual(r.refundable, 15000);
+  assertEqual(r.refundable, 5000);
 });
 
 test('final: investment tip suggests useful extra investment', () => {
-  // rebate 30,000 vs 3%-cap 39,000 → 9,000 headroom → 60,000 more at 15%
+  // rebate 20,000 vs 3%-cap 39,000 → 19,000 headroom → 190,000 more at 10%
   const r = BDTax.calculateTax({ ...base, investment: 200000,
     salaryPeriods: [{ monthlyAmount: 150000, fromMonth: 0, toMonth: 11 }] });
-  assertEqual(r.investmentTip, { extraInvestment: 60000, saving: 9000 });
+  assertEqual(r.investmentTip, { extraInvestment: 190000, saving: 19000 });
 });
 
 test('final: no tip when floor makes investing useless', () => {
