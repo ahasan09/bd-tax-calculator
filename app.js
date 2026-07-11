@@ -101,28 +101,32 @@
     if (r.tds > 0) h += line('− Already deducted at office (TDS)', fmt(r.tds), '');
     h += `<div class="bd-rule"></div>`;
     if (r.refundable > 0) {
-      h += `<div class="bd-total refund"><span>Refundable / adjustable</span><span>${fmt(r.refundable)}</span></div>`;
+      h += `<div class="bd-total refund"><span>Refundable / adjustable</span><span class="amt">${fmt(r.refundable)}</span></div>`;
     } else {
-      h += `<div class="bd-total"><span>Payable</span><span>${fmt(r.netPayable)}</span></div>`;
+      h += `<div class="bd-total"><span>Payable</span><span class="amt">${fmt(r.netPayable)}</span></div>`;
     }
     $('breakdown').innerHTML = h;
   }
 
-  // Always-visible rebate formula (live numbers) + how much to invest in
-  // total for the maximum rebate. All values come from the engine.
-  function investmentHint(r) {
+  // Always-visible rebate formula with live numbers — quiet reference text.
+  function investmentFormula(r) {
     const pct = x => (x * 100).toFixed(0) + '%';
     const rb = r.rules.rebate;
-    let text = `Rebate = lowest of ${pct(rb.incomeRate)} of taxable income (${fmt(r.rebateBreakdown.byIncome)}), ` +
+    return `Rebate = lowest of ${pct(rb.incomeRate)} of taxable income (${fmt(r.rebateBreakdown.byIncome)}), ` +
       `${pct(rb.investmentRate)} of investment (${fmt(r.rebateBreakdown.byInvestment)}), or ${fmt(rb.cap)} ` +
       `→ your rebate: ${fmt(r.rebate)}.`;
+  }
+
+  // Actionable advice only — how much to invest and what it saves.
+  function investmentHint(r) {
+    const parts = [];
     if (r.targetInvestment > 0) {
-      text += ` Investing ${fmt(r.targetInvestment)} in total earns the maximum rebate of ${fmt(r.maxUsefulRebate)}.`;
+      parts.push(`Investing ${fmt(r.targetInvestment)} in total earns the maximum rebate of ${fmt(r.maxUsefulRebate)}.`);
     }
     if (r.investmentTip) {
-      text += ` Investing ${fmt(r.investmentTip.extraInvestment)} more would save ${fmt(r.investmentTip.saving)} in tax.`;
+      parts.push(`Investing ${fmt(r.investmentTip.extraInvestment)} more would save ${fmt(r.investmentTip.saving)} in tax.`);
     }
-    return text;
+    return parts.join(' ');
   }
 
   // ---- main loop ----
@@ -131,7 +135,11 @@
     $('salaryWarning').textContent = salaryWarnings(inputs.salaryPeriods);
     const r = BDTax.calculateTax(inputs);
     render(r);
+    $('investmentFormula').textContent = investmentFormula(r);
     $('investmentHint').textContent = investmentHint(r);
+    $('liveTotal').textContent = r.refundable > 0
+      ? `Refundable ${fmt(r.refundable)}`
+      : `Payable ${fmt(r.netPayable)}`;
     $('footerBasis').textContent = `${r.rules.label} rules per ${r.rules.basis}. `;
   }
 

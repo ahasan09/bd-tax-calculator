@@ -36,8 +36,9 @@
   .salary-row input { flex: 1; min-width: 0; padding: 0.45rem 0.6rem;
     border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; }
   .salary-row select { padding: 0.45rem 0.3rem; border: 1px solid var(--line); border-radius: 6px; }
-  .salary-row button { border: none; background: none; color: var(--warn);
+  .salary-row button { border: none; background: none; color: var(--muted);
     font-size: 1.1rem; cursor: pointer; padding: 0.2rem; }
+  .salary-row button:hover { color: var(--warn); }
   #addRow { background: none; border: 1px dashed var(--accent); color: var(--accent);
     border-radius: 6px; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; }
   .warn { color: var(--warn); font-size: 0.85rem; min-height: 1.2em; margin: 0.3rem 0 0; }
@@ -50,9 +51,13 @@
   .bd-line .amt { font-variant-numeric: tabular-nums; white-space: nowrap; }
   .bd-sub { color: var(--muted); font-size: 0.85rem; }
   .bd-rule { border-top: 1px solid var(--line); margin: 0.5rem 0; }
-  .bd-total { font-size: 1.25rem; font-weight: 700; display: flex;
-    justify-content: space-between; padding-top: 0.6rem; }
+  .bd-total { font-size: 1.3rem; font-weight: 700; display: flex;
+    align-items: baseline; justify-content: space-between; padding-top: 0.6rem; }
+  .bd-total .amt { font-size: 1.9rem; font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em; }
   .bd-total.refund { color: var(--good); }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap; }
   footer { text-align: center; color: var(--muted); font-size: 0.8rem;
     padding: 1.5rem 1rem 2rem; }
   footer a { color: var(--accent); }
@@ -107,6 +112,7 @@
     <label class="field">Investment eligible for rebate
       <span class="hint">DPS, sanchayapatra, life insurance premium, provident fund, listed shares</span>
       <input type="number" id="investment" min="0" placeholder="0">
+      <span class="hint" id="investmentFormula"></span>
       <span class="tip" id="investmentHint"></span>
     </label>
     <label class="field">Tax already deducted at office (TDS)
@@ -115,7 +121,8 @@
     </label>
   </form>
 
-  <aside class="panel" id="breakdown" aria-live="polite"></aside>
+  <aside class="panel" id="breakdown"></aside>
+  <span id="liveTotal" class="sr-only" aria-live="polite"></span>
 </main>
 <footer>
   <span id="footerBasis"></span>
