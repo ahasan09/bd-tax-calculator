@@ -7,11 +7,14 @@
 <style>
   :root {
     --ink: #1f2937; --muted: #6b7280; --line: #e5e7eb;
-    --accent: #0f766e; --warn: #b45309; --good: #15803d; --bg: #f8fafc;
+    --accent: #006a4e;   /* Bangladesh bottle green */
+    --warn: #b45309; --good: #15803d; --bg: #f8fafc;
+    --num: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
   }
   * { box-sizing: border-box; }
   body { margin: 0; font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
          color: var(--ink); background: var(--bg); line-height: 1.45; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
   header { text-align: center; padding: 1.5rem 1rem 0.5rem; }
   header h1 { margin: 0; font-size: 1.5rem; }
   header p { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.9rem; }
@@ -27,6 +30,7 @@
   label.field input[type=number], label.field select {
     display: block; width: 100%; margin-top: 0.25rem; padding: 0.45rem 0.6rem;
     border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; font-weight: 400; }
+  input[type=number] { font-family: var(--num); }
   .hint { font-weight: 400; font-size: 0.8rem; color: var(--muted); display: block; }
   .inline { display: flex; align-items: center; gap: 0.5rem; font-weight: 400; margin-bottom: 0.6rem; }
   .inline input[type=number] { width: 4.5rem; padding: 0.3rem; border: 1px solid var(--line); border-radius: 6px; }
@@ -43,19 +47,27 @@
     border-radius: 6px; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; }
   .warn { color: var(--warn); font-size: 0.85rem; min-height: 1.2em; margin: 0.3rem 0 0; }
   .tip { color: var(--accent); font-size: 0.85rem; margin: 0.3rem 0 0; }
-  /* breakdown pane */
+  /* breakdown pane — ledger/receipt treatment */
+  #breakdown { border-top: 4px solid var(--accent); }
+  .bd-title { margin: 0 0 0.75rem; font-size: 0.8rem; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
   .bd-line { display: flex; justify-content: space-between; gap: 1rem;
     padding: 0.3rem 0; font-size: 0.95rem; }
   .bd-line .lbl { color: var(--ink); }
-  .bd-line .lbl small { color: var(--muted); display: block; font-size: 0.75rem; }
-  .bd-line .amt { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .bd-line .lbl small { color: var(--muted); display: block; font-size: 0.75rem;
+    font-weight: 400; }
+  .bd-line .amt { font-family: var(--num); font-size: 0.9rem;
+    font-variant-numeric: tabular-nums; white-space: nowrap; }
   .bd-sub { color: var(--muted); font-size: 0.85rem; }
   .bd-rule { border-top: 1px solid var(--line); margin: 0.5rem 0; }
+  .bd-tear { border-top: 1px dashed #9ca3af; margin: 0.7rem 0 0.15rem; }
   .bd-total { font-size: 1.3rem; font-weight: 700; display: flex;
     align-items: baseline; justify-content: space-between; padding-top: 0.6rem; }
-  .bd-total .amt { font-size: 1.9rem; font-variant-numeric: tabular-nums;
-    letter-spacing: -0.01em; }
+  .bd-total .amt { font-family: var(--num); font-size: 1.9rem;
+    font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+    color: var(--accent); }
   .bd-total.refund { color: var(--good); }
+  .bd-total.refund .amt { color: var(--good); }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden;
     clip: rect(0 0 0 0); white-space: nowrap; }
   footer { text-align: center; color: var(--muted); font-size: 0.8rem;
@@ -98,7 +110,7 @@
     <h2>Monthly salary</h2>
     <div id="salaryRows"></div>
     <button type="button" id="addRow">+ Add period</button>
-    <p class="warn" id="salaryWarning"></p>
+    <p class="warn" id="salaryWarning" role="status"></p>
 
     <h2>Other amounts (yearly totals)</h2>
     <label class="field">Bonus

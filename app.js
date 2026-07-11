@@ -19,10 +19,11 @@
     const row = document.createElement('div');
     row.className = 'salary-row';
     row.innerHTML =
-      `<input type="number" min="0" placeholder="Monthly amount" class="amount">
-       from <select class="from">${monthOptions(from)}</select>
-       to <select class="to">${monthOptions(to)}</select>
-       <button type="button" class="remove" title="Remove period">✖</button>`;
+      `<input type="number" min="0" placeholder="Monthly amount" class="amount"
+              aria-label="Monthly salary amount">
+       from <select class="from" aria-label="From month">${monthOptions(from)}</select>
+       to <select class="to" aria-label="To month">${monthOptions(to)}</select>
+       <button type="button" class="remove" aria-label="Remove period" title="Remove period">✖</button>`;
     row.querySelector('.remove').addEventListener('click', () => {
       if (rowsEl.children.length > 1) row.remove();
       else row.querySelector('.amount').value = '';   // last row: just clear it
@@ -78,7 +79,7 @@
 
   function render(r) {
     const pct = x => (x * 100).toFixed(0) + '%';
-    let h = '<h2 style="margin-top:0">Your tax, step by step</h2>';
+    let h = '<h2 class="bd-title">Your tax, step by step</h2>';
     h += line('Gross salary', fmt(r.grossSalary),
       r.bonus > 0 ? `includes ${fmt(r.bonus)} bonus` : '');
     h += line('− Tax-free part of salary', fmt(r.exemption),
@@ -99,7 +100,7 @@
     if (r.minimumApplied) h += line('Minimum tax applies', fmt(r.finalTax),
       `income above the tax-free limit pays at least ${fmt(r.minimumTax)}`);
     if (r.tds > 0) h += line('− Already deducted at office (TDS)', fmt(r.tds), '');
-    h += `<div class="bd-rule"></div>`;
+    h += `<div class="bd-tear"></div>`;
     if (r.refundable > 0) {
       h += `<div class="bd-total refund"><span>Refundable / adjustable</span><span class="amt">${fmt(r.refundable)}</span></div>`;
     } else {
