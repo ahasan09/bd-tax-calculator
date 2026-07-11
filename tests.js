@@ -128,6 +128,22 @@ test('threshold: woman category', () => {
   assertEqual(r.grossTax, 0);
 });
 
+test('threshold: third gender / disabled category (500,000)', () => {
+  const at = BDTax.calculateTax({ ...base, category: 'thirdGender', otherIncome: 500000 });
+  assertEqual(at.finalTax, 0, 'at threshold');
+  const above = BDTax.calculateTax({ ...base, category: 'disabled', otherIncome: 510000 });
+  assertEqual(above.grossTax, 1000, '10,000 @ 10%');
+  assertEqual(above.finalTax, 5000, 'floored to minimum tax');
+});
+
+test('threshold: freedom fighter / July Warrior category (525,000)', () => {
+  const at = BDTax.calculateTax({ ...base, category: 'freedomFighter', otherIncome: 525000 });
+  assertEqual(at.finalTax, 0, 'at threshold');
+  const above = BDTax.calculateTax({ ...base, category: 'julyWarrior', otherIncome: 600000 });
+  assertEqual(above.grossTax, 7500, '75,000 @ 10%');
+  assertEqual(above.finalTax, 7500, 'above the minimum-tax floor');
+});
+
 test('threshold: disabled dependent bonus', () => {
   const r = BDTax.calculateTax({ ...base, disabledDependents: 1, otherIncome: 400000 });
   assertEqual(r.threshold, 425000, '375,000 + 50,000');

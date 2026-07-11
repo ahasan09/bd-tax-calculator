@@ -77,61 +77,61 @@
             <span class="amt">${amt}</span></div>`;
   }
 
-  function render(r) {
+  function render(result) {
     const pct = x => (x * 100).toFixed(0) + '%';
     let h = '<h2 class="bd-title">Your tax, step by step</h2>';
-    h += line('Gross salary', fmt(r.grossSalary),
-      r.bonus > 0 ? `includes ${fmt(r.bonus)} bonus` : '');
-    h += line('− Tax-free part of salary', fmt(r.exemption),
+    h += line('Gross salary', fmt(result.grossSalary),
+      result.bonus > 0 ? `includes ${fmt(result.bonus)} bonus` : '');
+    h += line('− Tax-free part of salary', fmt(result.exemption),
       '⅓ of salary is tax-free (max ৳5,00,000)');
-    if (r.otherIncome > 0) h += line('+ Other income', fmt(r.otherIncome), '');
+    if (result.otherIncome > 0) h += line('+ Other income', fmt(result.otherIncome), '');
     h += `<div class="bd-rule"></div>`;
-    h += line('<b>Taxable income</b>', `<b>${fmt(r.taxableIncome)}</b>`, '');
+    h += line('<b>Taxable income</b>', `<b>${fmt(result.taxableIncome)}</b>`, '');
     h += `<div class="bd-rule"></div>`;
-    r.slabs.forEach((s, i) => {
+    result.slabs.forEach((s, i) => {
       h += line(i === 0 ? `First ${fmt(s.amount)} — tax-free` : `Next ${fmt(s.amount)} @ ${pct(s.rate)}`,
         fmt(s.tax));
     });
-    h += line('<b>Tax before rebate</b>', `<b>${fmt(r.grossTax)}</b>`, '');
-    if (r.rebate > 0) h += line('− Investment rebate', fmt(r.rebate),
-      `lowest of ${pct(r.rules.rebate.incomeRate)} of income (${fmt(r.rebateBreakdown.byIncome)}), ` +
-      `${pct(r.rules.rebate.investmentRate)} of investment (${fmt(r.rebateBreakdown.byInvestment)}), ` +
-      `${fmt(r.rebateBreakdown.cap)}`);
+    h += line('<b>Tax before rebate</b>', `<b>${fmt(result.grossTax)}</b>`, '');
+    if (result.rebate > 0) h += line('− Investment rebate', fmt(result.rebate),
+      `lowest of ${pct(result.rules.rebate.incomeRate)} of income (${fmt(result.rebateBreakdown.byIncome)}), ` +
+      `${pct(result.rules.rebate.investmentRate)} of investment (${fmt(result.rebateBreakdown.byInvestment)}), ` +
+      `${fmt(result.rebateBreakdown.cap)}`);
     const annualSub = [];
-    if (r.minimumApplied) annualSub.push(`minimum tax — income above the tax-free limit pays at least ${fmt(r.minimumTax)}`);
-    if (r.finalTax > 0) annualSub.push(`your office deducts ≈ ${fmt(r.monthlyTds)} per month`);
-    h += line('<b>Annual tax</b>', `<b>${fmt(r.finalTax)}</b>`, annualSub.join('; '));
-    if (r.tds > 0) h += line('− Already deducted at office (TDS)', fmt(r.tds), '');
+    if (result.minimumApplied) annualSub.push(`minimum tax — income above the tax-free limit pays at least ${fmt(result.minimumTax)}`);
+    if (result.finalTax > 0) annualSub.push(`your office deducts ≈ ${fmt(result.monthlyTds)} per month`);
+    h += line('<b>Annual tax</b>', `<b>${fmt(result.finalTax)}</b>`, annualSub.join('; '));
+    if (result.tds > 0) h += line('− Already deducted at office (TDS)', fmt(result.tds), '');
     h += `<div class="bd-tear"></div>`;
-    if (r.refundable > 0) {
-      h += `<div class="bd-total refund"><span>Refundable / adjustable</span><span class="amt">${fmt(r.refundable)}</span></div>`;
+    if (result.refundable > 0) {
+      h += `<div class="bd-total refund"><span>Refundable / adjustable</span><span class="amt">${fmt(result.refundable)}</span></div>`;
     } else {
-      h += `<div class="bd-total"><span>Payable</span><span class="amt">${fmt(r.netPayable)}</span></div>`;
+      h += `<div class="bd-total"><span>Payable</span><span class="amt">${fmt(result.netPayable)}</span></div>`;
     }
     $('breakdown').innerHTML = h;
   }
 
   // Always-visible rebate formula with live numbers — quiet reference text.
-  function investmentFormula(r) {
+  function investmentFormula(result) {
     const pct = x => (x * 100).toFixed(0) + '%';
-    const rb = r.rules.rebate;
-    return `Rebate = lowest of ${pct(rb.incomeRate)} of taxable income (${fmt(r.rebateBreakdown.byIncome)}), ` +
-      `${pct(rb.investmentRate)} of investment (${fmt(r.rebateBreakdown.byInvestment)}), or ${fmt(rb.cap)} ` +
-      `→ your rebate: ${fmt(r.rebate)}.`;
+    const rb = result.rules.rebate;
+    return `Rebate = lowest of ${pct(rb.incomeRate)} of taxable income (${fmt(result.rebateBreakdown.byIncome)}), ` +
+      `${pct(rb.investmentRate)} of investment (${fmt(result.rebateBreakdown.byInvestment)}), or ${fmt(rb.cap)} ` +
+      `→ your rebate: ${fmt(result.rebate)}.`;
   }
 
   // Actionable advice only — how much to invest and what it saves.
-  function investmentHint(r) {
+  function investmentHint(result) {
     const parts = [];
-    if (r.targetInvestment > 0) {
-      parts.push(r.rebateBreakdown.byInvestment >= r.maxUsefulRebate
-        ? `You've met the ${fmt(r.targetInvestment)} investment target — maximum rebate of ${fmt(r.maxUsefulRebate)} applied.`
-        : `Investing ${fmt(r.targetInvestment)} in total earns the maximum rebate of ${fmt(r.maxUsefulRebate)}.`);
+    if (result.targetInvestment > 0) {
+      parts.push(result.rebateBreakdown.byInvestment >= result.maxUsefulRebate
+        ? `You've met the ${fmt(result.targetInvestment)} investment target — maximum rebate of ${fmt(result.maxUsefulRebate)} applied.`
+        : `Investing ${fmt(result.targetInvestment)} in total earns the maximum rebate of ${fmt(result.maxUsefulRebate)}.`);
     }
-    if (r.investmentTip) {
-      parts.push(`Investing ${fmt(r.investmentTip.extraInvestment)} more would save ${fmt(r.investmentTip.saving)} in tax.`);
-      parts.push(`With the full ${fmt(r.targetInvestment)} invested, annual tax drops to ` +
-        `${fmt(r.taxIfMaxInvested)} — ≈ ${fmt(r.monthlyTdsIfMaxInvested)} per month from salary.`);
+    if (result.investmentTip) {
+      parts.push(`Investing ${fmt(result.investmentTip.extraInvestment)} more would save ${fmt(result.investmentTip.saving)} in tax.`);
+      parts.push(`With the full ${fmt(result.targetInvestment)} invested, annual tax drops to ` +
+        `${fmt(result.taxIfMaxInvested)} — ≈ ${fmt(result.monthlyTdsIfMaxInvested)} per month from salary.`);
     }
     return parts.join(' ');
   }
@@ -140,20 +140,20 @@
   function recalc() {
     const inputs = readInputs();
     $('salaryWarning').textContent = salaryWarnings(inputs.salaryPeriods);
-    const r = BDTax.calculateTax(inputs);
-    render(r);
-    $('investmentFormula').textContent = investmentFormula(r);
-    $('investmentHint').textContent = investmentHint(r);
-    $('liveTotal').textContent = r.refundable > 0
-      ? `Refundable ${fmt(r.refundable)}`
-      : `Payable ${fmt(r.netPayable)}`;
+    const result = BDTax.calculateTax(inputs);
+    render(result);
+    $('investmentFormula').textContent = investmentFormula(result);
+    $('investmentHint').textContent = investmentHint(result);
+    $('liveTotal').textContent = result.refundable > 0
+      ? `Refundable ${fmt(result.refundable)}`
+      : `Payable ${fmt(result.netPayable)}`;
     const bar = $('stickyTotal');
-    const refund = r.refundable > 0;
+    const refund = result.refundable > 0;
     bar.classList.toggle('refund', refund);
     bar.querySelector('.lbl').textContent = refund ? 'Refundable' : 'Payable';
-    bar.querySelector('.amt').textContent = fmt(refund ? r.refundable : r.netPayable);
-    $('footerBasis').textContent = `${r.rules.label} rules per ${r.rules.basis}. ` +
-      (r.rules.note ? `${r.rules.note}. ` : '');
+    bar.querySelector('.amt').textContent = fmt(refund ? result.refundable : result.netPayable);
+    $('footerBasis').textContent = `${result.rules.label} rules per ${result.rules.basis}. ` +
+      (result.rules.note ? `${result.rules.note}. ` : '');
   }
 
   $('addRow').addEventListener('click', () => { addRow(); recalc(); });

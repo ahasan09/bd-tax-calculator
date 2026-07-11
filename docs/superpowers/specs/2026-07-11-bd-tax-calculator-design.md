@@ -204,8 +204,8 @@ tax advice." + link to nbr.gov.bd.
 renders green/red results — open in a browser to verify. Scenarios cover:
 each threshold boundary (all 4 categories, at/below/just-above), mid-year
 raise vs flat salary equivalence, each of the three rebate caps binding —
-verified under both years' rates (15%/৳10 lakh and 10%/৳7.5 lakh), same
-inputs producing different rebates across the year toggle, minimum-tax floor
+with the year toggle verified to produce identical results under the
+unified rebate rule (10%/৳7.5 lakh, both years), minimum-tax floor
 (regular and first-time), refund case, zero input, and the exemption cap
 (salary above ৳15,00,000 where the ৳5,00,000 cap binds).
 
