@@ -100,8 +100,45 @@ const BDTax = (() => {
       remaining -= amount;
     }
 
+    const investment = Math.round(num(inputs.investment));
+    const rebateBreakdown = {
+      byIncome: Math.round(taxableIncome * rules.rebate.incomeRate),
+      byInvestment: Math.round(investment * rules.rebate.investmentRate),
+      cap: rules.rebate.cap
+    };
+    // Rebate can never exceed the tax itself (tax never goes negative).
+    const rebate = Math.min(
+      rebateBreakdown.byIncome, rebateBreakdown.byInvestment, rebateBreakdown.cap, grossTax);
+    const taxAfterRebate = grossTax - rebate;
+
+    const aboveThreshold = taxableIncome > threshold;
+    const minimumTax = aboveThreshold
+      ? (inputs.isFirstTimeTaxpayer ? rules.minimumTax.firstTime : rules.minimumTax.regular)
+      : 0;
+    const finalTax = aboveThreshold ? Math.max(taxAfterRebate, minimumTax) : 0;
+    const minimumApplied = aboveThreshold && finalTax > taxAfterRebate;
+
+    // Would investing more actually lower the bill?
+    const maxUsefulRebate = Math.min(rebateBreakdown.byIncome, rules.rebate.cap, grossTax);
+    let investmentTip = null;
+    if (aboveThreshold && rebate < maxUsefulRebate) {
+      const saving = finalTax - Math.max(grossTax - maxUsefulRebate, minimumTax);
+      if (saving > 0) {
+        investmentTip = {
+          extraInvestment: Math.ceil((maxUsefulRebate - rebate) / rules.rebate.investmentRate),
+          saving
+        };
+      }
+    }
+
+    const tds = Math.round(num(inputs.tds));
+
     return { rules, salaryFromPeriods, bonus, grossSalary, exemption, otherIncome,
-      taxableIncome, threshold, slabs, grossTax };
+      taxableIncome, threshold, slabs, grossTax,
+      rebateBreakdown, rebate, taxAfterRebate, minimumTax, minimumApplied, finalTax,
+      investmentTip, tds,
+      netPayable: Math.max(finalTax - tds, 0),
+      refundable: Math.max(tds - finalTax, 0) };
   }
 
   return { RULES, MONTHS, formatBDT, calculateTax };

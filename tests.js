@@ -134,6 +134,90 @@ test('threshold: disabled dependent bonus', () => {
   assertEqual(r.grossTax, 0);
 });
 
+// ---- Task 4: rebate, minimum tax, payable ----
+test('final: below threshold pays nothing, no minimum', () => {
+  const r = BDTax.calculateTax({ ...base,
+    salaryPeriods: [{ monthlyAmount: 30000, fromMonth: 0, toMonth: 11 }] });
+  assertEqual(r.finalTax, 0);
+  assertEqual(r.minimumTax, 0);
+  assertEqual(r.netPayable, 0);
+});
+
+test('final: minimum tax floor at 5,000', () => {
+  // taxable 384,000 → grossTax 900 → floored
+  const r = BDTax.calculateTax({ ...base,
+    salaryPeriods: [{ monthlyAmount: 48000, fromMonth: 0, toMonth: 11 }] });
+  assertEqual(r.finalTax, 5000);
+  assertEqual(r.minimumApplied, true);
+});
+
+test('final: first-time taxpayer minimum is 1,000', () => {
+  const r = BDTax.calculateTax({ ...base, isFirstTimeTaxpayer: true,
+    salaryPeriods: [{ monthlyAmount: 48000, fromMonth: 0, toMonth: 11 }] });
+  assertEqual(r.finalTax, 1000);
+});
+
+test('final: spec mockup — rebate then floor', () => {
+  // taxable 520,000, grossTax 14,500; rebate candidates 15,600 / 18,000 / 1M,
+  // capped by grossTax → 14,500; after rebate 0 → floor 5,000
+  const r = BDTax.calculateTax({ ...base, bonus: 60000, investment: 120000, salaryPeriods: [
+    { monthlyAmount: 50000, fromMonth: 0, toMonth: 5 },
+    { monthlyAmount: 70000, fromMonth: 6, toMonth: 11 }] });
+  assertEqual(r.rebate, 14500);
+  assertEqual(r.finalTax, 5000);
+  assertEqual(r.minimumApplied, true);
+});
+
+test('final: year toggle changes rebate (15% vs 10%)', () => {
+  // taxable 1,300,000, grossTax 135,000, investment 200,000
+  const inputs = { ...base, investment: 200000,
+    salaryPeriods: [{ monthlyAmount: 150000, fromMonth: 0, toMonth: 11 }] };
+  const r25 = BDTax.calculateTax(inputs);
+  const r26 = BDTax.calculateTax({ ...inputs, taxYear: '2026-27' });
+  assertEqual(r25.rebate, 30000, '15% of 200,000 binds');
+  assertEqual(r25.finalTax, 105000);
+  assertEqual(r26.rebate, 20000, '10% of 200,000 binds');
+  assertEqual(r26.finalTax, 115000);
+});
+
+test('final: absolute rebate caps (10 lakh vs 7.5 lakh)', () => {
+  const inputs = { ...base, otherIncome: 40000000, investment: 10000000 };
+  const r25 = BDTax.calculateTax(inputs);
+  const r26 = BDTax.calculateTax({ ...inputs, taxYear: '2026-27' });
+  assertEqual(r25.rebate, 1000000);
+  assertEqual(r25.finalTax, 10617500);
+  assertEqual(r26.rebate, 750000);
+  assertEqual(r26.finalTax, 10867500);
+});
+
+test('final: TDS refund', () => {
+  const r = BDTax.calculateTax({ ...base, investment: 200000, tds: 120000,
+    salaryPeriods: [{ monthlyAmount: 150000, fromMonth: 0, toMonth: 11 }] });
+  assertEqual(r.finalTax, 105000);
+  assertEqual(r.netPayable, 0);
+  assertEqual(r.refundable, 15000);
+});
+
+test('final: investment tip suggests useful extra investment', () => {
+  // rebate 30,000 vs 3%-cap 39,000 → 9,000 headroom → 60,000 more at 15%
+  const r = BDTax.calculateTax({ ...base, investment: 200000,
+    salaryPeriods: [{ monthlyAmount: 150000, fromMonth: 0, toMonth: 11 }] });
+  assertEqual(r.investmentTip, { extraInvestment: 60000, saving: 9000 });
+});
+
+test('final: no tip when floor makes investing useless', () => {
+  // grossTax 900 → even full rebate leaves 5,000 floor
+  const r = BDTax.calculateTax({ ...base,
+    salaryPeriods: [{ monthlyAmount: 48000, fromMonth: 0, toMonth: 11 }] });
+  assertEqual(r.investmentTip, null);
+});
+
+test('final: all-zero input is all zeros, no NaN', () => {
+  const r = BDTax.calculateTax({ ...base });
+  assertEqual([r.grossSalary, r.taxableIncome, r.grossTax, r.rebate, r.finalTax,
+    r.netPayable, r.refundable], [0, 0, 0, 0, 0, 0, 0]);
+});
+
 if (typeof document !== 'undefined') {
   // ---- render ----
   const ul = document.getElementById('results');
