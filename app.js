@@ -35,8 +35,7 @@
     return [...rowsEl.querySelectorAll('.salary-row')].map(row => ({
       monthlyAmount: row.querySelector('.amount').value,
       fromMonth: Number(row.querySelector('.from').value),
-      toMonth: Number(row.querySelector('.to').value),
-      el: row
+      toMonth: Number(row.querySelector('.to').value)
     }));
   }
 

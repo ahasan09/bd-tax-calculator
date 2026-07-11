@@ -137,9 +137,11 @@ never computes anything; it only renders the returned breakdown.
 4. `threshold` = category threshold + 50,000 × disabledDependents
 5. `slabTax` = progressive slabs applied above the threshold; output includes a
    per-slab array `{bandAmount, rate, tax}` for the trace
-6. `rebate` = min(3% × taxableIncome, rebateRate × investment, rebateCap)
-   using the selected year's rate/cap; never more than would take tax below
-   the minimum-tax floor (and never below 0)
+6. `rebate` = min(3% × taxableIncome, rebateRate × investment, rebateCap,
+   gross tax) using the selected year's rate/cap — capped at the gross tax so
+   tax never goes negative. The breakdown shows the full rebate line and then
+   a separate minimum-tax line when the floor applies; the floor is enforced
+   in step 7, not by trimming the displayed rebate.
 7. `minimumTaxApplied` = if taxableIncome > threshold, floor the result at
    5,000 (or 1,000 if first-time); flag when the floor changed the number
 8. `netPayable` = tax − tds; negative values reported as `refundable`
