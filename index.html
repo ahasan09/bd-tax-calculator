@@ -24,12 +24,31 @@
   .lang button[aria-pressed="true"] { background: var(--accent); color: #fff; }
   header h1 { margin: 0; font-size: 1.5rem; }
   header p { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.9rem; }
-  main { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
-         max-width: 960px; margin: 1rem auto; padding: 0 1rem; align-items: start; }
-  main > * { min-width: 0; }  /* let grid panels shrink below content width */
-  @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+  main { max-width: 960px; margin: 0 auto 1rem; padding: 0 1rem; }
+  .view-calc { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+  .view-calc > * { min-width: 0; }  /* let grid panels shrink below content width */
+  @media (max-width: 800px) { .view-calc { grid-template-columns: 1fr; } }
+  [role="tabpanel"][hidden] { display: none; }
+  /* tabs: app views (top) and result views (inside the result pane) */
+  .tabs { display: flex; gap: 0.25rem; max-width: 960px; margin: 1rem auto 0.75rem; padding: 0 1rem;
+    border-bottom: 1px solid var(--line); overflow-x: auto; }
+  .tabs [role="tab"], .subtabs [role="tab"] { border: none; background: none; cursor: pointer;
+    color: var(--muted); font: inherit; font-size: 0.95rem; padding: 0.65rem 0.9rem; min-height: 44px;
+    border-bottom: 3px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+  .tabs [role="tab"][aria-selected="true"], .subtabs [role="tab"][aria-selected="true"] {
+    color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+  .tabs [role="tab"]:hover, .subtabs [role="tab"]:hover { color: var(--ink); }
+  .subtabs { display: flex; gap: 0.25rem; border-bottom: 1px solid var(--line); margin: -0.5rem 0 1rem; }
+  .subtabs [role="tab"] { font-size: 0.85rem; padding: 0.55rem 0.7rem; }
+  .link-btn { background: none; border: none; padding: 0.4rem 0; margin-top: 0.4rem; cursor: pointer;
+    color: var(--accent); font: inherit; font-size: 0.85rem; text-align: left; }
+  .link-btn:hover { text-decoration: underline; }
+  #planBody .plan { margin-top: 0; padding-top: 0; border-top: none; }
+  #planBody .plan > .bd-title { display: none; }   /* the tab already names it; shown in print */
+  .plan-empty { color: var(--muted); font-size: 0.9rem; margin: 0; }
   .panel { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 1.25rem; }
   #breakdown { position: sticky; top: 1rem; }
+  @media (min-width: 801px) { #breakdown { max-height: calc(100vh - 2rem); overflow-y: auto; } }
   fieldset { border: 1px solid var(--line); border-radius: 8px; margin: 0 0 1rem; padding: 0.6rem 0.8rem; }
   legend { font-size: 0.8rem; color: var(--muted); padding: 0 0.3rem; }
   label.field { display: block; margin-bottom: 0.9rem; font-weight: 600; font-size: 0.95rem; }
@@ -96,7 +115,6 @@
   .bd-total.refund { color: var(--good); }
   .bd-total.refund .amt { color: var(--good); }
   /* return summary */
-  #returnPanel { grid-column: 1 / -1; }
   .return-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.6rem 1rem; align-items: start; }
   .return-head h2 { margin: 0; font-size: 1.1rem; }
   .return-head .hint { margin: 0.2rem 0 0; }
@@ -117,8 +135,20 @@
   .ret-note { color: var(--muted); font-size: 0.78rem; margin: 1rem 0 0; }
   @media print {
     body { background: #fff; padding: 0; }
-    header p, #form, .share, .sticky-total, .return-actions, #returnStatus { display: none !important; }
-    main { display: block; max-width: none; margin: 0; }
+    header p, .lang, .tabs, .subtabs, .link-btn, #form, .share, .sticky-total, .return-actions, #returnStatus { display: none !important; }
+    main { max-width: none; margin: 0; padding: 0; }
+    .view-calc { display: block; }
+    #view-calc, #view-return, #breakdownBody, #planBody { display: block !important; }
+    #breakdown { max-height: none; overflow: visible; }
+    /* no trailing space after the last line, or it spills onto a blank page */
+    body { margin: 0 !important; padding: 0 !important; }
+    main { margin: 0 !important; }
+    .sr-only, #liveTotal { display: none !important; }
+    #view-return .panel { padding-bottom: 0; }
+    .ret-note { margin-bottom: 0; }
+    .ret-table td { padding: 0.2rem; }
+    #planBody .plan { margin-top: 1.4rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+    #planBody .plan > .bd-title { display: block; }
     .panel { border: none; padding: 0.5rem 0; }
     #breakdown { position: static; border-top: none; break-after: page; }
     #returnPanel { break-inside: avoid; }
@@ -178,7 +208,14 @@
   <h1 data-i18n="app.title">Bangladesh Income Tax Calculator</h1>
   <p data-i18n="app.subtitle">For salaried people — everything calculates live, nothing is stored</p>
 </header>
+<nav class="tabs" role="tablist" data-i18n-aria="tab.views" aria-label="Views">
+  <button type="button" role="tab" id="tab-calc" aria-controls="view-calc" aria-selected="true"
+          data-i18n="tab.calculator">Calculator</button>
+  <button type="button" role="tab" id="tab-return" aria-controls="view-return" aria-selected="false" tabindex="-1"
+          data-i18n="tab.return">Return summary</button>
+</nav>
 <main>
+ <div id="view-calc" class="view-calc" role="tabpanel" aria-labelledby="tab-calc">
   <form class="panel" id="form" autocomplete="off">
     <label class="field"><span data-i18n="year.label">Tax year</span>
       <select id="taxYear"></select>
@@ -258,7 +295,14 @@
   </form>
 
   <aside class="panel" id="breakdown">
-    <div id="breakdownBody"></div>
+    <div class="subtabs" role="tablist" data-i18n-aria="tab.result" aria-label="Result">
+      <button type="button" role="tab" id="tab-breakdown" aria-controls="breakdownBody" aria-selected="true"
+              data-i18n="tab.breakdown">Tax breakdown</button>
+      <button type="button" role="tab" id="tab-plan" aria-controls="planBody" aria-selected="false" tabindex="-1"
+              data-i18n="tab.plan">Monthly plan</button>
+    </div>
+    <div id="breakdownBody" role="tabpanel" aria-labelledby="tab-breakdown"></div>
+    <div id="planBody" role="tabpanel" aria-labelledby="tab-plan" hidden></div>
     <div class="share">
       <button type="button" id="shareBtn" data-i18n="share.button">Copy share link</button>
       <span class="hint" data-i18n="share.note"></span>
@@ -266,6 +310,8 @@
       <input type="text" id="shareUrl" readonly hidden data-i18n-aria="share.urlAria" aria-label="Share link">
     </div>
   </aside>
+ </div>
+ <div id="view-return" role="tabpanel" aria-labelledby="tab-return" hidden>
   <section class="panel" id="returnPanel" aria-labelledby="returnTitle">
     <div class="return-head">
       <div>
@@ -280,6 +326,7 @@
     <p id="returnStatus" role="status"></p>
     <div id="returnBody"></div>
   </section>
+ </div>
   <span id="liveTotal" class="sr-only" aria-live="polite"></span>
 </main>
 <div id="stickyTotal" class="sticky-total" aria-hidden="true">

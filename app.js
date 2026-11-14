@@ -262,8 +262,12 @@
     const total = totalView(result);
     h += `<div class="bd-total${total.refund ? ' refund' : ''}">` +
       `<span>${total.label}</span><span class="amt">${total.amount}</span></div>`;
-    h += renderPlan(result);
+    // The plan has its own tab; a one-line pointer keeps it discoverable.
+    const plan = renderPlan(result);
+    if (plan) h += `<button type="button" class="link-btn" data-goto="tab-plan">${result.plan.perMonth > 0
+      ? t('bd.planLink', { amount: fmt(result.plan.perMonth) }) : t('bd.planLinkPlain')}</button>`;
     $('breakdownBody').innerHTML = h;
+    $('planBody').innerHTML = plan || `<p class="plan-empty">${t('plan.empty')}</p>`;
   }
 
   // ---- monthly deduction plan ----
@@ -462,6 +466,33 @@
     } else fallback();
   }
 
+  // ---- tabs (WAI-ARIA tabs pattern: click, ←/→, Home/End) ----
+  // Returns select(tabId) so other code can switch tabs.
+  function setupTabs(list) {
+    const tabs = [...list.querySelectorAll('[role="tab"]')];
+    const select = (tab, focus) => {
+      for (const t2 of tabs) {
+        const on = t2 === tab;
+        t2.setAttribute('aria-selected', String(on));
+        t2.tabIndex = on ? 0 : -1;
+        $(t2.getAttribute('aria-controls')).hidden = !on;
+      }
+      if (focus) tab.focus();
+    };
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('click', () => select(tab));
+      tab.addEventListener('keydown', e => {
+        const step = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+        const j = step ? (i + step + tabs.length) % tabs.length
+          : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : -1;
+        if (j < 0) return;
+        e.preventDefault();
+        select(tabs[j], true);
+      });
+    });
+    return id => select(tabs.find(tab => tab.id === id));
+  }
+
   // ---- main loop ----
   function recalc() {
     if (!nextMonthTouched) $('nextMonth').value = BDTax.defaultNextMonth($('taxYear').value);
@@ -509,6 +540,12 @@
   $('nextMonth').addEventListener('change', () => { nextMonthTouched = true; });
   $('shareBtn').addEventListener('click', shareLink);
   $('printReturn').addEventListener('click', () => window.print());
+  setupTabs(document.querySelector('.tabs'));
+  const selectResultTab = setupTabs(document.querySelector('.subtabs'));
+  $('breakdownBody').addEventListener('click', e => {
+    const go = e.target.closest('[data-goto]');
+    if (go) selectResultTab(go.dataset.goto);
+  });
   $('copyReturn').addEventListener('click', copyReturn);
   for (const b of document.querySelectorAll('.lang button')) {
     b.addEventListener('click', () => { if (b.dataset.lang !== BDI18n.getLang()) setLanguage(b.dataset.lang); });

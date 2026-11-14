@@ -1,5 +1,7 @@
 # Bangladesh Income Tax Calculator
 
+**Live site: https://ahasan09.github.io/bd-tax-calculator/**
+
 Live, in-browser income tax calculator for salaried people in Bangladesh.
 No backend, no database, nothing stored — open `index.html` and type.
 
@@ -41,6 +43,11 @@ uses the device's own fonts, so no web-font request leaves the page. All
 text lives in `i18n.js`; the tests check both languages have every key with
 the same placeholders.
 
+**Layout:** two tabs — *Calculator* (the form, with the result pane split
+into *Tax breakdown* and *Monthly plan*) and *Return summary* on its own
+page. Printing always includes the breakdown, the plan and the return
+summary, whichever tab is open.
+
 **Return summary:** your figures in the order the individual return form
 (IT-11GA 2023) asks for them — income serials 1–11, tax computation 12–19,
 payment 20–26, plus Schedule 1 (salary) and Schedule 5 (rebate), each with
@@ -53,7 +60,14 @@ opened, so an edited or broken link can't inject anything into the page.
 
 ## Run
 
-Open `index.html` in any browser. No build, no dependencies.
+Use the live site above, or open `index.html` in any browser. No build, no
+dependencies.
+
+## Deploy
+
+Every push to `main` runs `.github/workflows/pages.yml`: the engine tests
+must pass, then only the calculator (`index.html` and its four scripts) is
+published to GitHub Pages — tests and docs stay off the site.
 
 ## Test
 
