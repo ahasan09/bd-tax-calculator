@@ -83,6 +83,7 @@ npm run preview    # serve dist/ locally
 | `src/components/` | The Mantine UI: form sections, result panel, return summary. |
 | `src/mantine-styles.ts` | The Mantine stylesheets the app imports — only what it uses, not the full bundle. |
 | `scripts/check-css.mjs` | Build check: fails (and names the file to add) if a Mantine component is used without its stylesheet. |
+| `public/` | Icons (SVG, ICO, Apple touch, 192/512 and maskable PNGs) and the web app manifest. |
 | `tests/` | Vitest suites. |
 
 ## Test
