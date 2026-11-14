@@ -6,6 +6,14 @@
   clip: rect(0 0 0 0); white-space: nowrap;
 }
 
+/* Return summary tables (plain HTML; Mantine colour variables keep both themes right). */
+.ret-table { width: 100%; border-collapse: collapse; font-size: var(--mantine-font-size-sm); }
+.ret-table td { padding: 6px 4px; border-bottom: 1px solid var(--mantine-color-default-border); vertical-align: top; }
+.ret-table td.sn { width: 28px; color: var(--mantine-color-dimmed); }
+.ret-table td.num { text-align: right; white-space: nowrap; }
+.ret-table small { display: block; color: var(--mantine-color-dimmed); font-size: var(--mantine-font-size-xs); }
+.ret-table tr.total td { font-weight: 700; }
+
 /* Desktop: the result pane stays in view while the form scrolls, and
    scrolls inside itself if it is ever taller than the screen. */
 @media (min-width: 62em) {
@@ -33,8 +41,8 @@
   .print-page { break-before: page; }
   /* paper is narrower than the on-screen 2-column breakpoint */
   .return-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; column-gap: 1.5rem !important; }
-  .return-grid .mantine-Table-td { padding-top: 2px; padding-bottom: 2px; }
+  .return-grid .ret-table td { padding-top: 2px; padding-bottom: 2px; }
   /* compact type on paper so the summary fits one page in both languages */
-  .return-panel, .return-panel .mantine-Table-td, .return-panel .mantine-Text-root { font-size: 10.5px !important; line-height: 1.35 !important; }
+  .return-panel, .return-panel td, .return-panel small, .return-panel .mantine-Text-root { font-size: 10.5px !important; line-height: 1.35 !important; }
   .return-panel h2 { font-size: 16px !important; }
 }

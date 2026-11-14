@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Group, Paper, SimpleGrid, Stack, Table, Text, Title } from '@mantine/core';
+import { Button, Group, Paper, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { returnSummary, type ReturnRow, type TaxResult } from '../engine/tax';
 import { formBangla } from '../i18n';
 import { useLang } from '../i18n/context';
@@ -35,37 +35,37 @@ export function ReturnSummary({ result }: { result: TaxResult }) {
 
   // English shows the form's Bangla wording underneath, so rows are easy to
   // match against the printed form; in Bangla the label already is that wording.
+  // Plain tables: Mantine's Table carries a ScrollArea we don't need (~15 kB).
   const serialTable = (rows: ReturnRow[]) => (
-    <Table verticalSpacing={6} horizontalSpacing={4}>
-      <Table.Tbody>
+    <table className="ret-table">
+      <tbody>
         {rows.map(row => {
           const key = 'ret.row.' + row.key;
-          const bold = TOTAL_ROWS.includes(row.serial) ? 700 : 400;
           return (
-            <Table.Tr key={row.serial}>
-              <Table.Td w={28} c="dimmed" className="amt" style={{ verticalAlign: 'top' }}>{digits(row.serial)}</Table.Td>
-              <Table.Td fw={bold}>
+            <tr key={row.serial} className={TOTAL_ROWS.includes(row.serial) ? 'total' : undefined}>
+              <td className="sn amt">{digits(row.serial)}</td>
+              <td>
                 {t(key)}
-                {lang === 'en' && <Text size="xs" c="dimmed" lang="bn">{formBangla(key)}</Text>}
-              </Table.Td>
-              <Table.Td fw={bold} ta="right" className="amt" style={{ whiteSpace: 'nowrap', verticalAlign: 'top' }}>{money(row.amount)}</Table.Td>
-            </Table.Tr>
+                {lang === 'en' && <small lang="bn">{formBangla(key)}</small>}
+              </td>
+              <td className="num amt">{money(row.amount)}</td>
+            </tr>
           );
         })}
-      </Table.Tbody>
-    </Table>
+      </tbody>
+    </table>
   );
   const plainTable = (rows: [string, number, boolean?][]) => (
-    <Table verticalSpacing={6} horizontalSpacing={4}>
-      <Table.Tbody>
+    <table className="ret-table">
+      <tbody>
         {rows.map(([label, amount, total], i) => (
-          <Table.Tr key={i} fw={total ? 700 : 400}>
-            <Table.Td>{label}</Table.Td>
-            <Table.Td ta="right" className="amt" style={{ whiteSpace: 'nowrap' }}>{money(amount)}</Table.Td>
-          </Table.Tr>
+          <tr key={i} className={total ? 'total' : undefined}>
+            <td>{label}</td>
+            <td className="num amt">{money(amount)}</td>
+          </tr>
         ))}
-      </Table.Tbody>
-    </Table>
+      </tbody>
+    </table>
   );
   const section = (title: string) => <Text tt={lang === 'en' ? 'uppercase' : undefined} fz="xs" fw={700} c="dimmed" mb={4}>{title}</Text>;
 

@@ -1,4 +1,4 @@
-import { Paper, Select, Stack, Title } from '@mantine/core';
+import { NativeSelect, Paper, Stack, Title } from '@mantine/core';
 import { MONTHS } from '../../engine/tax';
 import { useLang } from '../../i18n/context';
 import { effectiveNextMonth } from '../../state/form';
@@ -14,13 +14,12 @@ export function MonthlyDeduction({ calc }: { calc: Calculator }) {
     <Paper withBorder p="lg">
       <Stack gap="md">
         <Title order={2} size="h4">{t('monthly.heading')}</Title>
-        <Select
+        <NativeSelect
           label={t('monthly.next')}
           description={t('monthly.nextHint')}
           data={data}
           value={String(effectiveNextMonth(calc.form))}
-          onChange={v => v !== null && calc.actions.update({ nextMonth: Number(v) })}
-          allowDeselect={false}
+          onChange={e => calc.actions.update({ nextMonth: Number(e.currentTarget.value) })}
         />
       </Stack>
     </Paper>

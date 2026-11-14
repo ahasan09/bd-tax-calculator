@@ -1,4 +1,4 @@
-import { Checkbox, Paper, Select, SimpleGrid, Stack, Title } from '@mantine/core';
+import { Checkbox, NativeSelect, Paper, SimpleGrid, Stack, Title } from '@mantine/core';
 import { CATEGORIES, RULES, YEARS, yearStatus, type Category } from '../../engine/tax';
 import { useLang } from '../../i18n/context';
 import type { Calculator } from '../../state/useCalculator';
@@ -20,21 +20,19 @@ export function AboutYou({ calc }: { calc: Calculator }) {
     <Paper withBorder p="lg">
       <Stack gap="md">
         <Title order={2} size="h4">{t('section.about')}</Title>
-        <Select
+        <NativeSelect
           label={t('year.label')}
           description={t('year.hint.' + yearStatus(form.taxYear))}
           data={years}
           value={form.taxYear}
-          onChange={v => v && actions.update({ taxYear: v })}
-          allowDeselect={false}
+          onChange={e => actions.update({ taxYear: e.currentTarget.value })}
           inputWrapperOrder={['label', 'input', 'description']}
         />
-        <Select
+        <NativeSelect
           label={t('cat.label')}
           data={CATEGORIES.map(c => ({ value: c, label: t('cat.' + c) }))}
           value={form.category}
-          onChange={v => v && actions.update({ category: v as Category })}
-          allowDeselect={false}
+          onChange={e => actions.update({ category: e.currentTarget.value as Category })}
         />
         <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="md">
           <Checkbox

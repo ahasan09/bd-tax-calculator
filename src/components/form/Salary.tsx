@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Button, Fieldset, Group, Paper, Select, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { ActionIcon, Alert, Button, Fieldset, Group, NativeSelect, Paper, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { MONTHS } from '../../engine/tax';
 import { useLang } from '../../i18n/context';
 import type { EmployerForm } from '../../state/form';
@@ -35,13 +35,13 @@ function EmployerCard({ calc, employer, index }: { calc: Calculator; employer: E
               style={{ flex: '1 1 12rem', minWidth: 0 }}
             />
             <Group gap={6} wrap="nowrap" style={{ flex: '1 1 15rem', minWidth: 0 }}>
-              <Select aria-label={t('row.fromAria')} data={months} value={String(p.fromMonth)}
-                allowDeselect={false} style={{ flex: 1, minWidth: 0 }}
-                onChange={v => v !== null && actions.updatePeriod(employer.id, p.id, { fromMonth: Number(v) })} />
+              <NativeSelect aria-label={t('row.fromAria')} data={months} value={String(p.fromMonth)}
+                style={{ flex: 1, minWidth: 0 }}
+                onChange={e => actions.updatePeriod(employer.id, p.id, { fromMonth: Number(e.currentTarget.value) })} />
               <Text c="dimmed" aria-hidden="true">–</Text>
-              <Select aria-label={t('row.toAria')} data={months} value={String(p.toMonth)}
-                allowDeselect={false} style={{ flex: 1, minWidth: 0 }}
-                onChange={v => v !== null && actions.updatePeriod(employer.id, p.id, { toMonth: Number(v) })} />
+              <NativeSelect aria-label={t('row.toAria')} data={months} value={String(p.toMonth)}
+                style={{ flex: 1, minWidth: 0 }}
+                onChange={e => actions.updatePeriod(employer.id, p.id, { toMonth: Number(e.currentTarget.value) })} />
               <ActionIcon variant="subtle" color="gray" aria-label={t('row.remove')} title={t('row.remove')}
                 onClick={() => actions.removePeriod(employer.id, p.id)}>
                 <CloseIcon />
