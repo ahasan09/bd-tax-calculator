@@ -33,6 +33,11 @@ first-time-taxpayer rules, full step-by-step breakdown, an "investing
 after what your office has already deducted, spread over the salary months
 left in the year (mid-year joiners and "pay with return" cases included).
 
+**Share link:** "Copy share link" puts your inputs into the part of the URL
+after `#`, which browsers never send to a server — the link itself is the
+only copy. Anyone you give it to sees your figures. Links are validated when
+opened, so an edited or broken link can't inject anything into the page.
+
 ## Run
 
 Open `index.html` in any browser. No build, no dependencies.

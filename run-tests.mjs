@@ -3,7 +3,8 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 const dir = dirname(fileURLToPath(import.meta.url));
 const load = f => readFileSync(join(dir, f), 'utf8');
-const fn = new Function(load('tax.js') + '\n;globalThis.BDTax = BDTax;\n' + load('tests.js'));
+const fn = new Function(load('tax.js') + '\n;globalThis.BDTax = BDTax;\n' +
+  load('state.js') + '\n;globalThis.BDState = BDState;\n' + load('tests.js'));
 fn();
 const results = globalThis.__results;
 let passed = 0;

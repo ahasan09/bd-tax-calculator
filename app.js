@@ -241,7 +241,7 @@
     h += `<div class="bd-total${total.refund ? ' refund' : ''}">` +
       `<span>${total.label}</span><span class="amt">${total.amount}</span></div>`;
     h += renderPlan(result);
-    $('breakdown').innerHTML = h;
+    $('breakdownBody').innerHTML = h;
   }
 
   // ---- monthly deduction plan ----
@@ -320,6 +320,67 @@
     return parts.join(' ');
   }
 
+  // ---- share link: form <-> #s=… ----
+  // Fill the form from decoded link state (see state.js; already validated).
+  function writeInputs(st) {
+    if (st.taxYear) $('taxYear').value = st.taxYear;
+    $('category').value = st.category;
+    $('firstTime').checked = st.isFirstTimeTaxpayer;
+    $('dependents').value = st.disabledDependents;
+    employersEl.innerHTML = '';
+    for (const e of st.employers.length ? st.employers : [{ salaryPeriods: [], bonus: 0, tds: 0 }]) {
+      const card = addEmployer();
+      const rowsEl = card.querySelector('.rows');
+      e.salaryPeriods.forEach((p, i) => {
+        if (i > 0) addRow(rowsEl);
+        const row = rowsEl.children[i];
+        row.querySelector('.amount').value = p.monthlyAmount || '';
+        row.querySelector('.from').value = p.fromMonth;
+        row.querySelector('.to').value = p.toMonth;
+      });
+      card.querySelector('.bonus').value = e.bonus || '';
+      card.querySelector('.tds').value = e.tds || '';
+    }
+    const o = st.otherIncomes;
+    $('bankInterest').value = o.bankInterest.amount || '';
+    $('bankTds').value = o.bankInterest.tds || '';
+    $('savingsInterest').value = o.savingsInterest.amount || '';
+    $('savingsTds').value = o.savingsInterest.tds || '';
+    $('otherIncome').value = o.other.amount || '';
+    $('advanceTax').value = st.advanceTax || '';
+    for (const input of $('investments').querySelectorAll('input[data-key]')) {
+      input.value = st.investments[input.dataset.key] || '';
+      if (input.value) input.closest('details')?.setAttribute('open', '');
+    }
+    if (st.nextMonth !== undefined) { $('nextMonth').value = st.nextMonth; nextMonthTouched = true; }
+  }
+
+  function loadFromHash() {
+    const m = location.hash.match(/^#s=([A-Za-z0-9_-]+)$/);
+    if (!m) return;
+    const st = BDState.decode(m[1]);
+    if (st) writeInputs(st);
+    else showShareStatus('This share link could not be read — starting with an empty form.', true);
+  }
+
+  function showShareStatus(text, bad = false) {
+    $('shareStatus').textContent = text;
+    $('shareStatus').classList.toggle('bad', bad);
+  }
+
+  function shareLink() {
+    const url = location.href.split('#')[0] + '#s=' + BDState.encode(readInputs(), { keepNextMonth: nextMonthTouched });
+    const fallback = () => {
+      $('shareUrl').hidden = false;
+      $('shareUrl').value = url;
+      $('shareUrl').select();
+      showShareStatus('Copy the link below.');
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(url).then(() => showShareStatus('Link copied.'), fallback);
+    } else fallback();
+  }
+
   // ---- main loop ----
   function recalc() {
     if (!nextMonthTouched) $('nextMonth').value = BDTax.defaultNextMonth($('taxYear').value);
@@ -344,7 +405,8 @@
     addEmployer(nextEmployerStart(readEmployers()));
     recalc();
   });
-  $('form').addEventListener('input', recalc);
+  $('form').addEventListener('input', () => { showShareStatus(''); $('shareUrl').hidden = true; recalc(); });
+  $('shareBtn').addEventListener('click', shareLink);
 
   // Hide the mobile total bar while the real breakdown pane is on screen.
   if ('IntersectionObserver' in window) {
@@ -357,5 +419,6 @@
   fillNextMonth();
   fillInvestments();
   addEmployer();  // one employer with one full-year row
-  recalc();       // initial render (all zeros)
+  loadFromHash(); // a shared link replaces the empty form
+  recalc();       // initial render
 })();

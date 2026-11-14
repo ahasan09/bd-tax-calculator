@@ -85,6 +85,14 @@
     color: var(--accent); }
   .bd-total.refund { color: var(--good); }
   .bd-total.refund .amt { color: var(--good); }
+  /* share link */
+  .share { margin-top: 1.4rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+  #shareBtn { background: var(--accent); color: #fff; border: none; border-radius: 6px;
+    padding: 0.55rem 1rem; font-size: 0.9rem; cursor: pointer; margin-bottom: 0.4rem; }
+  #shareStatus { margin: 0.4rem 0 0; font-size: 0.85rem; color: var(--good); min-height: 1.2em; }
+  #shareStatus.bad { color: var(--warn); }
+  #shareUrl { width: 100%; margin-top: 0.4rem; padding: 0.4rem; font-family: var(--num); font-size: 0.75rem;
+    border: 1px solid var(--line); border-radius: 6px; }
   /* monthly deduction plan */
   .plan { margin-top: 1.4rem; padding-top: 1rem; border-top: 1px solid var(--line); }
   .plan-head { margin: 0; font-size: 0.95rem; }
@@ -197,7 +205,16 @@
     </label>
   </form>
 
-  <aside class="panel" id="breakdown"></aside>
+  <aside class="panel" id="breakdown">
+    <div id="breakdownBody"></div>
+    <div class="share">
+      <button type="button" id="shareBtn">Copy share link</button>
+      <span class="hint">Anyone with the link sees these figures. The link itself is the only copy —
+        nothing is saved on a server.</span>
+      <p id="shareStatus" role="status"></p>
+      <input type="text" id="shareUrl" readonly hidden aria-label="Share link">
+    </div>
+  </aside>
   <span id="liveTotal" class="sr-only" aria-live="polite"></span>
 </main>
 <div id="stickyTotal" class="sticky-total" aria-hidden="true">
@@ -209,6 +226,7 @@
   Official source: <a href="https://nbr.gov.bd" target="_blank" rel="noopener">nbr.gov.bd</a>
 </footer>
 <script src="tax.js"></script>
+<script src="state.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

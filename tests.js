@@ -569,6 +569,54 @@ test('NBR example খ: savings-certificate and bank interest (regular income par
   assertEqual([r.grossSalary, r.taxableIncome, r.grossTax, r.tds], [915000, 1260000, 122000, 101000]);
 });
 
+// ---- share-link state ----
+const formState = { taxYear: '2026-27', category: 'woman', isFirstTimeTaxpayer: true, disabledDependents: '1',
+  employers: [
+    { salaryPeriods: [{ monthlyAmount: '100000', fromMonth: 0, toMonth: 5 }], bonus: '', tds: '15000' },
+    { salaryPeriods: [{ monthlyAmount: '150000', fromMonth: 6, toMonth: 11 }], bonus: '75000', tds: '' }],
+  otherIncomes: { bankInterest: { amount: '20000', tds: '2000' }, savingsInterest: { amount: '', tds: '' },
+    other: { amount: '5000' } },
+  advanceTax: '3000', investments: { dps: '60000', govtSecurities: '', other: '' }, nextMonth: 6 };
+
+test('share: round-trip gives the same tax result', () => {
+  const back = BDState.decode(BDState.encode(formState, { keepNextMonth: true }));
+  const a = BDTax.calculateTax(formState), b = BDTax.calculateTax(back);
+  assertEqual([b.taxableIncome, b.finalTax, b.tds, b.netPayable, b.plan.perMonth],
+    [a.taxableIncome, a.finalTax, a.tds, a.netPayable, a.plan.perMonth]);
+  assertEqual([back.taxYear, back.category, back.isFirstTimeTaxpayer, back.disabledDependents, back.nextMonth],
+    ['2026-27', 'woman', true, 1, 6]);
+  assertEqual(back.employers.map(e => e.salaryPeriods.length), [1, 1]);
+});
+
+test('share: next month is left out unless the user chose it', () => {
+  assertEqual(BDState.decode(BDState.encode(formState)).nextMonth, undefined);
+});
+
+test('share: link is URL-safe and short', () => {
+  const s = BDState.encode(formState);
+  assertEqual(/^[A-Za-z0-9_-]+$/.test(s), true, 'base64url only');
+  assertEqual(s.length < 300, true, `length ${s.length}`);
+});
+
+test('share: unreadable links decode to null', () => {
+  for (const bad of ['', 'not base64!', BDState.encode({}).slice(0, 5), btoa('{"v":99}'), btoa('[1,2]')])
+    assertEqual(BDState.decode(bad), null, JSON.stringify(bad));
+});
+
+test('share: hostile values are dropped, not passed through', () => {
+  const raw = { v: 1, y: '1999-00', c: '__proto__', d: 1e9,
+    e: [{ p: [['<img src=x>', 0, 11], [5000, -1, 99], [5000, 2, 'x']], b: 'abc', t: -50 }],
+    o: { bi: ['1e3', '<b>'] }, a: Infinity, i: { dps: 1000, evil: 5 }, n: 40 };
+  const s = btoa(JSON.stringify(raw)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const d = BDState.decode(s);
+  assertEqual([d.taxYear, d.category, d.disabledDependents, d.advanceTax, d.nextMonth],
+    [undefined, 'general', 20, 0, undefined]);
+  assertEqual(d.employers[0].salaryPeriods, [{ monthlyAmount: 0, fromMonth: 0, toMonth: 11 }], 'bad rows dropped');
+  assertEqual([d.employers[0].bonus, d.employers[0].tds], [0, 0]);
+  assertEqual(d.otherIncomes.bankInterest, { amount: 1000, tds: 0 });
+  assertEqual([d.investments.dps, 'evil' in d.investments], [1000, false]);
+});
+
 if (typeof document !== 'undefined') {
   // ---- render ----
   const ul = document.getElementById('results');
