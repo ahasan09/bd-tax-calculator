@@ -16,6 +16,12 @@
          color: var(--ink); background: var(--bg); line-height: 1.45; }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
   header { text-align: center; padding: 1.5rem 1rem 0.5rem; }
+  /* Bangla: system fonts only — no web-font request leaves the page */
+  :lang(bn) body, body:lang(bn) { font-family: "Kohinoor Bangla", "Noto Sans Bengali", "Nirmala UI",
+    "Bangla Sangam MN", "Vrinda", -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .lang { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-bottom: 0.6rem; }
+  .lang button { border: none; background: #fff; color: var(--ink); padding: 0.35rem 0.8rem; font-size: 0.85rem; cursor: pointer; }
+  .lang button[aria-pressed="true"] { background: var(--accent); color: #fff; }
   header h1 { margin: 0; font-size: 1.5rem; }
   header p { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.9rem; }
   main { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
@@ -27,13 +33,17 @@
   fieldset { border: 1px solid var(--line); border-radius: 8px; margin: 0 0 1rem; padding: 0.6rem 0.8rem; }
   legend { font-size: 0.8rem; color: var(--muted); padding: 0 0.3rem; }
   label.field { display: block; margin-bottom: 0.9rem; font-weight: 600; font-size: 0.95rem; }
-  label.field input[type=number], label.field select {
+  label.field input.num, label.field select {
     display: block; width: 100%; margin-top: 0.25rem; padding: 0.45rem 0.6rem;
     border: 1px solid var(--line); border-radius: 6px; font-size: 1rem; font-weight: 400; }
-  input[type=number] { font-family: var(--num); }
+  input.num { font-family: var(--num); }
+  /* Bangla digits have no monospace font — use the Bangla face with tabular figures,
+     and drop letter-spacing that would split conjuncts. */
+  :root:lang(bn) { --num: "Kohinoor Bangla", "Noto Sans Bengali", "Nirmala UI", "Bangla Sangam MN", "Vrinda", sans-serif; }
+  :lang(bn) .bd-title, :lang(bn) .return-grid h3 { letter-spacing: 0; text-transform: none; }
   .hint { font-weight: 400; font-size: 0.8rem; color: var(--muted); display: block; }
   .inline { display: flex; align-items: center; gap: 0.5rem; font-weight: 400; margin-bottom: 0.6rem; }
-  .inline input[type=number] { width: 4.5rem; padding: 0.3rem; border: 1px solid var(--line); border-radius: 6px; }
+  .inline input.num { width: 4.5rem; padding: 0.3rem; border: 1px solid var(--line); border-radius: 6px; }
   h2 { font-size: 1rem; margin: 1.2rem 0 0.5rem; }
   .salary-row { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin-bottom: 0.5rem; }
   .salary-row input.amount { flex: 1 1 8rem; }
@@ -161,85 +171,88 @@
 </head>
 <body>
 <header>
-  <h1>Bangladesh Income Tax Calculator</h1>
-  <p>For salaried people — everything calculates live, nothing is stored</p>
+  <div class="lang" role="group" data-i18n-aria="lang.switch" aria-label="Language">
+    <button type="button" data-lang="en" lang="en">EN</button>
+    <button type="button" data-lang="bn" lang="bn">বাংলা</button>
+  </div>
+  <h1 data-i18n="app.title">Bangladesh Income Tax Calculator</h1>
+  <p data-i18n="app.subtitle">For salaried people — everything calculates live, nothing is stored</p>
 </header>
 <main>
   <form class="panel" id="form" autocomplete="off">
-    <label class="field">Tax year
+    <label class="field"><span data-i18n="year.label">Tax year</span>
       <select id="taxYear"></select>
       <span class="hint" id="yearHint"></span>
     </label>
 
-    <label class="field">Taxpayer category
+    <label class="field"><span data-i18n="cat.label">Taxpayer category</span>
       <select id="category">
-        <option value="general">General (male)</option>
-        <option value="woman">Woman</option>
-        <option value="senior">Senior citizen (65+)</option>
-        <option value="thirdGender">Third gender</option>
-        <option value="disabled">Person with disability</option>
-        <option value="freedomFighter">War-wounded freedom fighter</option>
-        <option value="julyWarrior">July Warrior</option>
+        <option value="general" data-i18n="cat.general">General (male)</option>
+        <option value="woman" data-i18n="cat.woman">Woman</option>
+        <option value="senior" data-i18n="cat.senior">Senior citizen (65+)</option>
+        <option value="thirdGender" data-i18n="cat.thirdGender">Third gender</option>
+        <option value="disabled" data-i18n="cat.disabled">Person with disability</option>
+        <option value="freedomFighter" data-i18n="cat.freedomFighter">War-wounded freedom fighter</option>
+        <option value="julyWarrior" data-i18n="cat.julyWarrior">July Warrior</option>
       </select>
     </label>
-    <label class="inline"><input type="checkbox" id="firstTime"> First-time taxpayer
-      <span class="hint">(minimum tax ৳1,000 instead of ৳5,000)</span></label>
-    <label class="inline">Disabled dependents
-      <input type="number" id="dependents" min="0" step="1" value="0">
-      <span class="hint">+৳50,000 tax-free each</span></label>
+    <label class="inline"><input type="checkbox" id="firstTime"> <span data-i18n="firstTime.label">First-time taxpayer</span>
+      <span class="hint" id="firstTimeHint"></span></label>
+    <label class="inline"><span data-i18n="dependents.label">Disabled dependents</span>
+      <input type="text" inputmode="numeric" class="num" id="dependents" value="0">
+      <span class="hint" id="dependentsHint"></span></label>
 
-    <h2>Salary</h2>
+    <h2 data-i18n="salary.heading">Salary</h2>
     <div id="employers"></div>
-    <button type="button" id="addEmployer">+ Add another employer (changed jobs this year)</button>
+    <button type="button" id="addEmployer" data-i18n="salary.addEmployer">+ Add another employer (changed jobs this year)</button>
     <p class="warn" id="salaryWarning" role="status"></p>
 
-    <h2>Other income (yearly totals)</h2>
-    <p class="hint section-hint">Interest is taxed at your normal rates; tax the bank or post office
-      already cut counts toward what you owe.</p>
+    <h2 data-i18n="other.heading">Other income (yearly totals)</h2>
+    <p class="hint section-hint" data-i18n="other.hint"></p>
     <div class="pair">
-      <label class="field">Bank / FDR / DPS interest
-        <input type="number" id="bankInterest" min="0" placeholder="0">
+      <label class="field"><span data-i18n="other.bankInterest">Bank / FDR / DPS interest</span>
+        <input type="text" inputmode="decimal" class="num" id="bankInterest" data-i18n-placeholder="0">
       </label>
-      <label class="field">Tax the bank deducted
-        <input type="number" id="bankTds" min="0" placeholder="0">
+      <label class="field"><span data-i18n="other.bankTds">Tax the bank deducted</span>
+        <input type="text" inputmode="decimal" class="num" id="bankTds" data-i18n-placeholder="0">
       </label>
     </div>
     <div class="pair">
-      <label class="field">Savings certificate (সঞ্চয়পত্র) profit
-        <input type="number" id="savingsInterest" min="0" placeholder="0">
+      <label class="field"><span data-i18n="other.savingsInterest">Savings certificate profit</span>
+        <input type="text" inputmode="decimal" class="num" id="savingsInterest" data-i18n-placeholder="0">
       </label>
-      <label class="field">Tax deducted at source
-        <input type="number" id="savingsTds" min="0" placeholder="0">
+      <label class="field"><span data-i18n="other.savingsTds">Tax deducted at source</span>
+        <input type="text" inputmode="decimal" class="num" id="savingsTds" data-i18n-placeholder="0">
       </label>
     </div>
     <div class="pair">
-      <label class="field">Rent income
-        <span class="hint">after the allowed expenses</span>
-        <input type="number" id="rentIncome" min="0" placeholder="0">
+      <label class="field"><span data-i18n="other.rent">Rent income</span>
+        <span class="hint" data-i18n="other.afterExpenses"></span>
+        <input type="text" inputmode="decimal" class="num" id="rentIncome" data-i18n-placeholder="0">
       </label>
-      <label class="field">Agriculture income
-        <span class="hint">after the allowed expenses</span>
-        <input type="number" id="agriIncome" min="0" placeholder="0">
+      <label class="field"><span data-i18n="other.agriculture">Agriculture income</span>
+        <span class="hint" data-i18n="other.afterExpenses"></span>
+        <input type="text" inputmode="decimal" class="num" id="agriIncome" data-i18n-placeholder="0">
       </label>
     </div>
-    <label class="field">Other income
-      <span class="hint">side income, royalties, fees, gifts and other sources</span>
-      <input type="number" id="otherIncome" min="0" placeholder="0">
+    <label class="field"><span data-i18n="other.other">Other income</span>
+      <span class="hint" data-i18n="other.otherHint"></span>
+      <input type="text" inputmode="decimal" class="num" id="otherIncome" data-i18n-placeholder="0">
     </label>
-    <label class="field">Advance tax paid
-      <span class="hint">e.g. paid when renewing your car's fitness certificate</span>
-      <input type="number" id="advanceTax" min="0" placeholder="0">
+    <label class="field"><span data-i18n="other.advanceTax">Advance tax paid</span>
+      <span class="hint" data-i18n="other.advanceHint"></span>
+      <input type="text" inputmode="decimal" class="num" id="advanceTax" data-i18n-placeholder="0">
     </label>
-    <h2>Investments for rebate (this year)</h2>
+    <h2 data-i18n="invest.heading">Investments for rebate (this year)</h2>
     <div id="investments"></div>
     <div class="invest-summary">
       <p class="invest-total" id="investmentTotal"></p>
       <p class="hint" id="investmentFormula"></p>
       <p class="tip" id="investmentHint"></p>
     </div>
-    <h2>Monthly deduction</h2>
-    <label class="field">Next salary month
-      <span class="hint">the first month not yet deducted — set from today's date</span>
+    <h2 data-i18n="monthly.heading">Monthly deduction</h2>
+    <label class="field"><span data-i18n="monthly.next">Next salary month</span>
+      <span class="hint" data-i18n="monthly.nextHint"></span>
       <select id="nextMonth"></select>
     </label>
   </form>
@@ -247,22 +260,21 @@
   <aside class="panel" id="breakdown">
     <div id="breakdownBody"></div>
     <div class="share">
-      <button type="button" id="shareBtn">Copy share link</button>
-      <span class="hint">Anyone with the link sees these figures. The link itself is the only copy —
-        nothing is saved on a server.</span>
+      <button type="button" id="shareBtn" data-i18n="share.button">Copy share link</button>
+      <span class="hint" data-i18n="share.note"></span>
       <p id="shareStatus" role="status"></p>
-      <input type="text" id="shareUrl" readonly hidden aria-label="Share link">
+      <input type="text" id="shareUrl" readonly hidden data-i18n-aria="share.urlAria" aria-label="Share link">
     </div>
   </aside>
   <section class="panel" id="returnPanel" aria-labelledby="returnTitle">
     <div class="return-head">
       <div>
-        <h2 id="returnTitle">Return summary</h2>
+        <h2 id="returnTitle" data-i18n="ret.title">Return summary</h2>
         <p class="hint" id="returnSub"></p>
       </div>
       <div class="return-actions">
-        <button type="button" id="printReturn">Print / save PDF</button>
-        <button type="button" id="copyReturn">Copy as text</button>
+        <button type="button" id="printReturn" data-i18n="ret.print">Print / save PDF</button>
+        <button type="button" id="copyReturn" data-i18n="ret.copy">Copy as text</button>
       </div>
     </div>
     <p id="returnStatus" role="status"></p>
@@ -271,15 +283,16 @@
   <span id="liveTotal" class="sr-only" aria-live="polite"></span>
 </main>
 <div id="stickyTotal" class="sticky-total" aria-hidden="true">
-  <span class="lbl">Payable</span><span class="amt">৳0</span>
+  <span class="lbl"></span><span class="amt"></span>
 </div>
 <footer>
   <span id="footerBasis"></span>
-  Estimates only — not tax advice.
-  Official source: <a href="https://nbr.gov.bd" target="_blank" rel="noopener">nbr.gov.bd</a>
+  <span data-i18n="footer.note">Estimates only — not tax advice. Official source:</span>
+  <a href="https://nbr.gov.bd" target="_blank" rel="noopener">nbr.gov.bd</a>
 </footer>
 <script src="tax.js"></script>
 <script src="state.js"></script>
+<script src="i18n.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

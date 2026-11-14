@@ -656,6 +656,43 @@ test('return: minimum tax (serial 15) is 0 at or below the tax-free limit', () =
   assertEqual(serials(s.tax)[15], 0);
 });
 
+// ---- English / Bangla text ----
+test('i18n: every key exists in both languages', () => {
+  const en = Object.keys(BDI18n.T.en).sort(), bn = Object.keys(BDI18n.T.bn).sort();
+  assertEqual(en.filter(k => !bn.includes(k)), [], 'missing in bn');
+  assertEqual(bn.filter(k => !en.includes(k)), [], 'missing in en');
+});
+
+test('i18n: both languages use the same {placeholders}', () => {
+  const holes = s => (s.match(/\{\w+\}/g) || []).sort().join(' ');
+  const bad = Object.keys(BDI18n.T.en).filter(k => holes(BDI18n.T.en[k]) !== holes(BDI18n.T.bn[k]));
+  assertEqual(bad, []);
+});
+
+test('i18n: every investment item and taxpayer category has a label', () => {
+  const rules = BDTax.RULES[BDTax.YEARS[0]];
+  const missing = [...rules.investmentItems.map(i => 'invest.' + i.key), ...Object.keys(rules.thresholds).map(c => 'cat.' + c)]
+    .filter(k => !(k in BDI18n.T.en));
+  assertEqual(missing, []);
+});
+
+test('i18n: Bangla digits for money, percent and months', () => {
+  BDI18n.setLang('bn');
+  try {
+    assertEqual([BDI18n.money(1234567), BDI18n.pct(0.15), BDI18n.month(0), BDI18n.digits('2025-26')],
+      ['৳১২,৩৪,৫৬৭', '১৫%', 'জুলাই', '২০২৫-২৬']);
+    assertEqual(BDI18n.t('bd.slabNext', { amount: BDI18n.money(300000), rate: BDI18n.pct(0.1) }), 'পরবর্তী ৳৩,০০,০০০ @ ১০%');
+  } finally { BDI18n.setLang('en'); }
+  assertEqual([BDI18n.money(1234567), BDI18n.month(0)], ['৳12,34,567', 'Jul'], 'English unchanged');
+});
+
+test('i18n: typed Bangla digits, commas and spaces read as numbers', () => {
+  assertEqual(['১,২০,০০০', '1,20,000', ' ৫০০০ ', '১২.৫', ''].map(BDI18n.toLatinDigits),
+    ['120000', '120000', '5000', '12.5', '']);
+  const r = BDTax.calculateTax({ ...base, otherIncome: BDI18n.toLatinDigits('৫,০০,০০০') });
+  assertEqual(r.taxableIncome, 500000);
+});
+
 if (typeof document !== 'undefined') {
   // ---- render ----
   const ul = document.getElementById('results');

@@ -33,6 +33,14 @@ first-time-taxpayer rules, full step-by-step breakdown, an "investing
 after what your office has already deducted, spread over the salary months
 left in the year (mid-year joiners and "pay with return" cases included).
 
+**বাংলা / English:** switch in the header; Bangla shows ০–৯ digits and Bangla
+month names, the return summary uses the form's own Bangla wording, and
+amounts can be typed with Bangla or Latin digits. The choice is remembered
+in your browser (Bangla is the default on a Bangla-language system). Bangla
+uses the device's own fonts, so no web-font request leaves the page. All
+text lives in `i18n.js`; the tests check both languages have every key with
+the same placeholders.
+
 **Return summary:** your figures in the order the individual return form
 (IT-11GA 2023) asks for them — income serials 1–11, tax computation 12–19,
 payment 20–26, plus Schedule 1 (salary) and Schedule 5 (rebate), each with
