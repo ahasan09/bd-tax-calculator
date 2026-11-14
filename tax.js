@@ -104,15 +104,30 @@ const BDTax = (() => {
     return isFinite(n) && n > 0 ? n : 0;
   }
 
+  // One employer's pay for the year: salary rows (rows with from > to are
+  // ignored), bonus, and the tax it deducted.
+  function employment(e) {
+    const validPeriods = (e.salaryPeriods || []).filter(p => Number(p.toMonth) >= Number(p.fromMonth));
+    const salary = Math.round(validPeriods.reduce((s, p) =>
+      s + toNonNegativeAmount(p.monthlyAmount) * (Number(p.toMonth) - Number(p.fromMonth) + 1), 0));
+    const bonus = Math.round(toNonNegativeAmount(e.bonus));
+    return { validPeriods, salary, bonus, gross: salary + bonus,
+      tds: Math.round(toNonNegativeAmount(e.tds)) };
+  }
+
   function calculateTax(inputs) {
     const rules = RULES[inputs.taxYear] || RULES[defaultYear()];
 
-    const validPeriods = (inputs.salaryPeriods || [])
-      .filter(p => Number(p.toMonth) >= Number(p.fromMonth));
-    const salaryFromPeriods = Math.round(validPeriods.reduce(
-      (sum, p) => sum + toNonNegativeAmount(p.monthlyAmount) * (Number(p.toMonth) - Number(p.fromMonth) + 1), 0));
-
-    const bonus = Math.round(toNonNegativeAmount(inputs.bonus));
+    // One entry per employer this year. Older callers pass salaryPeriods /
+    // bonus / tds at the top level — that is a single employer.
+    const employers = (inputs.employers ||
+      [{ salaryPeriods: inputs.salaryPeriods, bonus: inputs.bonus, tds: inputs.tds }]).map(employment);
+    const validPeriods = employers.flatMap(e => e.validPeriods);
+    const sum = key => employers.reduce((s, e) => s + e[key], 0);
+    const salaryFromPeriods = sum('salary');
+    const bonus = sum('bonus');
+    // Employment income is pooled across employers: the exemption cap below
+    // applies once per person, not once per job.
     const grossSalary = salaryFromPeriods + bonus;
     const exemption = Math.round(
       Math.min(grossSalary * rules.salaryExemption.fraction, rules.salaryExemption.cap));
@@ -168,8 +183,8 @@ const BDTax = (() => {
         };
       }
     }
-    const tds = Math.round(toNonNegativeAmount(inputs.tds));
-    // Months 0..11 in which a salary is paid — the employer can only deduct then.
+    const tds = sum('tds');
+    // Months 0..11 in which any salary is paid — an employer can only deduct then.
     const salaryMonths = MONTHS.map((_, m) => validPeriods.some(p =>
       toNonNegativeAmount(p.monthlyAmount) > 0 && m >= Number(p.fromMonth) && m <= Number(p.toMonth)));
     const nextMonth = Math.min(Math.max(Math.floor(Number(inputs.nextMonth) || 0), 0), 12);
@@ -189,6 +204,7 @@ const BDTax = (() => {
       taxableIncome, threshold, slabs, grossTax,
       rebateBreakdown, rebate, taxAfterRebate, minimumTax, minimumApplied, finalTax,
       plan, investmentAdvice, tds,
+      employers: employers.map(({ salary, bonus, gross, tds }) => ({ salary, bonus, gross, tds })),
       netPayable: Math.max(finalTax - tds, 0),
       refundable: Math.max(tds - finalTax, 0) };
   }

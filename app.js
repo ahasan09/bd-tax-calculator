@@ -5,9 +5,10 @@
   const $ = id => document.getElementById(id);
   const fmt = BDTax.formatBDT;
 
-  // ---- salary period rows ----
-  // Each row is DOM-owned state: input.amount, select.from, select.to
-  const rowsEl = $('salaryRows');
+  // ---- employers and their salary rows ----
+  // All state is DOM-owned: each .employer card holds .salary-row rows
+  // (input.amount, select.from, select.to) plus input.bonus and input.tds.
+  const employersEl = $('employers');
 
   function monthOptions(selected) {
     return BDTax.MONTHS
@@ -15,7 +16,7 @@
       .join('');
   }
 
-  function addRow(from = 0, to = 11) {
+  function addRow(rowsEl, from = 0, to = 11) {
     const row = document.createElement('div');
     row.className = 'salary-row';
     row.innerHTML =
@@ -32,27 +33,81 @@
     rowsEl.appendChild(row);
   }
 
-  function readPeriods() {
-    return [...rowsEl.querySelectorAll('.salary-row')].map(row => ({
-      monthlyAmount: row.querySelector('.amount').value,
-      fromMonth: Number(row.querySelector('.from').value),
-      toMonth: Number(row.querySelector('.to').value)
+  function addEmployer(from = 0) {
+    const card = document.createElement('fieldset');
+    card.className = 'employer';
+    card.innerHTML =
+      `<legend></legend>
+       <div class="rows"></div>
+       <button type="button" class="add-row">+ Salary change</button>
+       <label class="field">Bonus
+         <span class="hint">festival + performance bonuses from this employer</span>
+         <input type="number" min="0" placeholder="0" class="bonus">
+       </label>
+       <label class="field">Tax deducted so far (TDS)
+         <span class="hint">total this employer has withheld this year up to now</span>
+         <input type="number" min="0" placeholder="0" class="tds">
+       </label>
+       <button type="button" class="remove-employer">Remove this employer</button>`;
+    const rowsEl = card.querySelector('.rows');
+    card.querySelector('.add-row').addEventListener('click', () => { addRow(rowsEl); recalc(); });
+    card.querySelector('.remove-employer').addEventListener('click', () => {
+      card.remove(); renumberEmployers(); recalc();
+    });
+    addRow(rowsEl, from, 11);
+    employersEl.appendChild(card);
+    renumberEmployers();
+    return card;
+  }
+
+  // Legends read "Employer 1, 2…" only when there is more than one job.
+  function renumberEmployers() {
+    const cards = [...employersEl.querySelectorAll('.employer')];
+    cards.forEach((card, i) => {
+      card.querySelector('legend').textContent = cards.length > 1 ? `Employer ${i + 1}` : 'Your employer';
+      card.querySelector('.remove-employer').hidden = cards.length === 1;
+    });
+  }
+
+  function readEmployers() {
+    return [...employersEl.querySelectorAll('.employer')].map(card => ({
+      salaryPeriods: [...card.querySelectorAll('.salary-row')].map(row => ({
+        monthlyAmount: row.querySelector('.amount').value,
+        fromMonth: Number(row.querySelector('.from').value),
+        toMonth: Number(row.querySelector('.to').value)
+      })),
+      bonus: card.querySelector('.bonus').value,
+      tds: card.querySelector('.tds').value
     }));
   }
 
+  // A new employer usually starts the month after the last one's salary ends.
+  function nextEmployerStart(employers) {
+    const paid = employers.flatMap(e => e.salaryPeriods)
+      .filter(p => Number(p.monthlyAmount) > 0 && p.toMonth >= p.fromMonth).map(p => p.toMonth);
+    return paid.length && Math.max(...paid) < 11 ? Math.max(...paid) + 1 : 0;
+  }
+
   // Warn on from>to rows and months counted twice; gaps are fine (mid-year joiners).
-  function salaryWarnings(periods) {
+  function salaryWarnings(employers) {
     const msgs = [];
-    const counts = new Array(12).fill(0);
-    for (const p of periods) {
-      if (p.toMonth < p.fromMonth) {
-        msgs.push(`"${BDTax.MONTHS[p.fromMonth]}–${BDTax.MONTHS[p.toMonth]}" is invalid (start is after end) — row ignored.`);
-      } else if (Number(p.monthlyAmount) > 0) {
-        for (let m = p.fromMonth; m <= p.toMonth; m++) counts[m]++;
+    const many = employers.length > 1;
+    const byEmployer = employers.map((e, n) => {
+      const counts = new Array(12).fill(0);
+      for (const p of e.salaryPeriods) {
+        if (p.toMonth < p.fromMonth) {
+          msgs.push(`${many ? `Employer ${n + 1}: ` : ''}"${BDTax.MONTHS[p.fromMonth]}–${BDTax.MONTHS[p.toMonth]}" ` +
+            'is invalid (start is after end) — row ignored.');
+        } else if (Number(p.monthlyAmount) > 0) {
+          for (let m = p.fromMonth; m <= p.toMonth; m++) counts[m]++;
+        }
       }
-    }
-    const dup = BDTax.MONTHS.filter((_, i) => counts[i] > 1);
-    if (dup.length) msgs.push(`${dup.join(', ')} counted in more than one period — both amounts are added.`);
+      const dup = BDTax.MONTHS.filter((_, i) => counts[i] > 1);
+      if (dup.length) msgs.push(`${many ? `Employer ${n + 1}: ` : ''}${dup.join(', ')} counted in more than one period — both amounts are added.`);
+      return counts;
+    });
+    const shared = BDTax.MONTHS.filter((_, i) => byEmployer.filter(c => c[i] > 0).length > 1);
+    if (shared.length) msgs.push(`${shared.join(', ')} paid by more than one employer — both salaries are counted.`);
     return msgs.join(' ');
   }
 
@@ -80,11 +135,9 @@
       category: $('category').value,
       isFirstTimeTaxpayer: $('firstTime').checked,
       disabledDependents: $('dependents').value,
-      salaryPeriods: readPeriods(),
-      bonus: $('bonus').value,
+      employers: readEmployers(),
       otherIncome: $('otherIncome').value,
       investment: $('investment').value,
-      tds: $('tds').value,
       nextMonth: Number($('nextMonth').value)
     };
   }
@@ -117,10 +170,13 @@
 
   function render(result) {
     let h = '<h2 class="bd-title">Your tax, step by step</h2>';
-    h += line('Gross salary', fmt(result.grossSalary),
-      result.bonus > 0 ? `includes ${fmt(result.bonus)} bonus` : '');
+    const many = result.employers.length > 1;
+    const perEmployer = key => result.employers.map((e, i) => `Employer ${i + 1} ${fmt(e[key])}`).join(' · ');
+    h += line('Gross salary', fmt(result.grossSalary), [
+      many ? perEmployer('gross') : '',
+      result.bonus > 0 ? `includes ${fmt(result.bonus)} bonus` : ''].filter(Boolean).join('; '));
     h += line('− Tax-free part of salary', fmt(result.exemption),
-      '⅓ of salary is tax-free (max ৳5,00,000)');
+      '⅓ of salary is tax-free (max ৳5,00,000)' + (many ? ' — once, on all jobs combined' : ''));
     if (result.otherIncome > 0) h += line('+ Other income', fmt(result.otherIncome), '');
     h += `<div class="bd-rule"></div>`;
     h += line('<b>Taxable income</b>', `<b>${fmt(result.taxableIncome)}</b>`, '');
@@ -134,7 +190,7 @@
       `lowest of ${rebateCandidatesText(result)}`);
     h += line('<b>Annual tax</b>', `<b>${fmt(result.finalTax)}</b>`, result.minimumApplied
       ? `minimum tax — income above the tax-free limit pays at least ${fmt(result.minimumTax)}` : '');
-    if (result.tds > 0) h += line('− Deducted so far (TDS)', fmt(result.tds), '');
+    if (result.tds > 0) h += line('− Deducted so far (TDS)', fmt(result.tds), many ? perEmployer('tds') : '');
     h += `<div class="bd-tear"></div>`;
     const total = totalView(result);
     h += `<div class="bd-total${total.refund ? ' refund' : ''}">` +
@@ -155,11 +211,12 @@
     if (p.remaining === 0) return { head: 'Fully deducted — nothing more this year.' };
     if (p.monthsLeft === 0) return { head: `No salary months left — pay ` +
       `<span class="amt">${fmt(p.payWithReturn)}</span> with your return.` };
+    const many = result.employers.length > 1;
     return {
-      head: `Your office should deduct <span class="amt">${fmt(p.perMonth)}</span> per month` +
+      head: `Your ${many ? 'current ' : ''}office should deduct <span class="amt">${fmt(p.perMonth)}</span> per month` +
         (p.monthsLeft < 12 ? `, ${span}` : ''),
       sub: result.tds > 0
-        ? `(${fmt(result.finalTax)} annual tax − ${fmt(result.tds)} already deducted) ÷ ${p.monthsLeft} salary months left`
+        ? `(${fmt(result.finalTax)} annual tax − ${fmt(result.tds)} already deducted${many ? ' by all employers' : ''}) ÷ ${p.monthsLeft} salary months left`
         : `${fmt(result.finalTax)} annual tax ÷ ${p.monthsLeft} salary months`
     };
   }
@@ -220,7 +277,7 @@
   function recalc() {
     if (!nextMonthTouched) $('nextMonth').value = BDTax.defaultNextMonth($('taxYear').value);
     const inputs = readInputs();
-    $('salaryWarning').textContent = salaryWarnings(inputs.salaryPeriods);
+    $('salaryWarning').textContent = salaryWarnings(inputs.employers);
     const result = BDTax.calculateTax(inputs);
     render(result);
     $('investmentFormula').textContent = investmentFormula(result);
@@ -235,7 +292,10 @@
     $('footerBasis').textContent = `${result.rules.label} rules per ${result.rules.source}.`;
   }
 
-  $('addRow').addEventListener('click', () => { addRow(); recalc(); });
+  $('addEmployer').addEventListener('click', () => {
+    addEmployer(nextEmployerStart(readEmployers()));
+    recalc();
+  });
   $('form').addEventListener('input', recalc);
 
   // Hide the mobile total bar while the real breakdown pane is on screen.
@@ -247,6 +307,6 @@
 
   fillYears();    // year picker, defaulting to the year most people want today
   fillNextMonth();
-  addRow();       // start with one full-year row
+  addEmployer();  // one employer with one full-year row
   recalc();       // initial render (all zeros)
 })();

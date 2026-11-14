@@ -425,6 +425,53 @@ test('plan: default next month follows the year status', () => {
   assertEqual(BDTax.defaultNextMonth('2026-27', on(2027, 6, 30)), 11, 'June');
 });
 
+// ---- multiple employers ----
+const jobChange = { ...base, taxYear: '2026-27', employers: [
+  { salaryPeriods: [{ monthlyAmount: 100000, fromMonth: 0, toMonth: 5 }], bonus: 0, tds: 15000 },
+  { salaryPeriods: [{ monthlyAmount: 150000, fromMonth: 6, toMonth: 11 }], bonus: 0, tds: 0 }] };
+
+test('employers: salaries combine before the exemption', () => {
+  // 600,000 + 900,000 = 1,500,000; ⅓ = 500,000 (cap) → taxable 1,000,000
+  const r = BDTax.calculateTax(jobChange);
+  assertEqual([r.grossSalary, r.exemption, r.taxableIncome], [1500000, 500000, 1000000]);
+  assertEqual(r.employers.map(e => [e.gross, e.tds]), [[600000, 15000], [900000, 0]]);
+});
+
+test('employers: ৳5 lakh exemption cap applies once, not per job', () => {
+  // two jobs of 900,000 each: per-job ⅓ would be 300,000 + 300,000 = 600,000
+  const r = BDTax.calculateTax({ ...base, employers: [
+    { salaryPeriods: [{ monthlyAmount: 150000, fromMonth: 0, toMonth: 5 }] },
+    { salaryPeriods: [{ monthlyAmount: 150000, fromMonth: 6, toMonth: 11 }] }] });
+  assertEqual([r.exemption, r.taxableIncome], [500000, 1300000]);
+});
+
+test('employers: same result as one employer with the same pay', () => {
+  const one = BDTax.calculateTax({ ...base, bonus: 50000, tds: 15000, salaryPeriods: [
+    { monthlyAmount: 100000, fromMonth: 0, toMonth: 5 }, { monthlyAmount: 150000, fromMonth: 6, toMonth: 11 }] });
+  const two = BDTax.calculateTax({ ...base, employers: [
+    { salaryPeriods: [{ monthlyAmount: 100000, fromMonth: 0, toMonth: 5 }], bonus: 20000, tds: 15000 },
+    { salaryPeriods: [{ monthlyAmount: 150000, fromMonth: 6, toMonth: 11 }], bonus: 30000 }] });
+  assertEqual([two.grossSalary, two.bonus, two.finalTax, two.tds, two.netPayable],
+    [one.grossSalary, one.bonus, one.finalTax, one.tds, one.netPayable]);
+});
+
+test('employers: previous employer TDS counts; new employer spreads the rest', () => {
+  // taxable 1,000,000 − 400k → 30,000 + 45,000 = 75,000; − 15,000 → 60,000 over Jan–Jun
+  const r = BDTax.calculateTax({ ...jobChange, nextMonth: 6 });
+  assertEqual([r.finalTax, r.tds, r.plan.remaining, r.plan.monthsLeft, r.plan.perMonth],
+    [75000, 15000, 60000, 6, 10000]);
+  assertEqual(r.plan.months.map(m => m.status),
+    ['deducted', 'deducted', 'deducted', 'deducted', 'deducted', 'deducted',
+      'planned', 'planned', 'planned', 'planned', 'planned', 'planned']);
+});
+
+test('employers: overlapping months are both counted', () => {
+  const r = BDTax.calculateTax({ ...base, employers: [
+    { salaryPeriods: [{ monthlyAmount: 50000, fromMonth: 0, toMonth: 11 }] },
+    { salaryPeriods: [{ monthlyAmount: 20000, fromMonth: 3, toMonth: 5 }] }] });
+  assertEqual(r.grossSalary, 660000, '600,000 + 60,000 part-time');
+});
+
 if (typeof document !== 'undefined') {
   // ---- render ----
   const ul = document.getElementById('results');

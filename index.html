@@ -43,8 +43,13 @@
   .salary-row button { border: none; background: none; color: var(--muted);
     font-size: 1.1rem; cursor: pointer; padding: 0.2rem; }
   .salary-row button:hover { color: var(--warn); }
-  #addRow { background: none; border: 1px dashed var(--accent); color: var(--accent);
-    border-radius: 6px; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; }
+  .add-row { background: none; border: 1px dashed var(--accent); color: var(--accent);
+    border-radius: 6px; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.9rem; margin-bottom: 0.9rem; }
+  fieldset.employer legend { font-size: 0.9rem; font-weight: 600; color: var(--ink); }
+  #addEmployer { width: 100%; background: var(--bg); border: 1px dashed #9ca3af; color: var(--ink);
+    border-radius: 8px; padding: 0.6rem; cursor: pointer; font-size: 0.9rem; }
+  .remove-employer { background: none; border: none; color: var(--warn); cursor: pointer;
+    font-size: 0.85rem; padding: 0.3rem 0; }
   .warn { color: var(--warn); font-size: 0.85rem; min-height: 1.2em; margin: 0.3rem 0 0; }
   .tip { color: var(--accent); font-size: 0.85rem; margin: 0.3rem 0 0; }
   /* breakdown pane — ledger/receipt treatment */
@@ -134,16 +139,12 @@
       <input type="number" id="dependents" min="0" step="1" value="0">
       <span class="hint">+৳50,000 tax-free each</span></label>
 
-    <h2>Monthly salary</h2>
-    <div id="salaryRows"></div>
-    <button type="button" id="addRow">+ Add period</button>
+    <h2>Salary</h2>
+    <div id="employers"></div>
+    <button type="button" id="addEmployer">+ Add another employer (changed jobs this year)</button>
     <p class="warn" id="salaryWarning" role="status"></p>
 
-    <h2>Other amounts (yearly totals)</h2>
-    <label class="field">Bonus
-      <span class="hint">festival + performance bonuses for the year</span>
-      <input type="number" id="bonus" min="0" placeholder="0">
-    </label>
+    <h2>Other income &amp; investment (yearly totals)</h2>
     <label class="field">Other income
       <span class="hint">bank interest, side income etc. — added to taxable income as-is</span>
       <input type="number" id="otherIncome" min="0" placeholder="0">
@@ -155,10 +156,6 @@
       <span class="tip" id="investmentHint"></span>
     </label>
     <h2>Monthly deduction</h2>
-    <label class="field">Tax deducted so far (TDS)
-      <span class="hint">total your employer has withheld this year up to now</span>
-      <input type="number" id="tds" min="0" placeholder="0">
-    </label>
     <label class="field">Next salary month
       <span class="hint">the first month not yet deducted — set from today's date</span>
       <select id="nextMonth"></select>
