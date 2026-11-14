@@ -38,8 +38,27 @@ const BDTax = (() => {
     ? [...BASE_BANDS, { size: Infinity, rate: 0.30 }]
     : [...BASE_BANDS, { size: thirtyBand, rate: 0.30 }, { size: Infinity, rate: 0.35 }];
 
+  // Investments eligible for the §78 rebate, per NBR Aykor Nirdeshika
+  // 2026-27 ("কর রেয়াতযোগ্য বিনিয়োগের সারণী", pp. 12–13). Only two items
+  // carry a stated limit there. Most-used items first: the UI shows the
+  // first four up front.
+  const INVESTMENT_ITEMS = [
+    { key: 'providentFund', label: 'Provident fund — your and your employer\'s contribution' },
+    { key: 'dps', label: 'DPS / monthly savings scheme', cap: 120000 },
+    { key: 'govtSecurities', label: 'Savings certificates (সঞ্চয়পত্র) & other government securities', cap: 500000 },
+    { key: 'lifeInsurance', label: 'Life insurance premium / deferred annuity' },
+    { key: 'listedShares', label: 'Listed shares — new investment' },
+    { key: 'funds', label: 'Mutual funds, unit certificates, ETFs — new investment' },
+    { key: 'universalPension', label: 'Universal pension scheme (সর্বজনীন পেনশন)' },
+    { key: 'pensionFund', label: 'Approved superannuation / pension fund' },
+    { key: 'donations', label: 'Donations: zakat fund, charitable hospital, disability or approved institutions' },
+    { key: 'welfareFund', label: 'Welfare fund / group insurance fund' },
+    { key: 'other', label: 'Other eligible investment' }
+  ];
+
   const COMMON = {
     source: SOURCE,
+    investmentItems: INVESTMENT_ITEMS,
     dependentBonus: 50000,                                // per disabled child/ward
     salaryExemption: { fraction: 1 / 3, cap: 500000 },    // ITA 2023 — unchanged
     minimumTax: { regular: 5000, firstTime: 1000 },
@@ -149,7 +168,16 @@ const BDTax = (() => {
       remaining -= amount;
     }
 
-    const investment = Math.round(toNonNegativeAmount(inputs.investment));
+    // Each item counts up to its legal limit. Older callers pass one total
+    // in `investment`, treated as "other".
+    const entered = inputs.investments || { other: inputs.investment };
+    const investmentItems = rules.investmentItems.map(({ key, cap }) => {
+      const amount = Math.round(toNonNegativeAmount(entered[key]));
+      const allowed = cap === undefined ? amount : Math.min(amount, cap);
+      return { key, amount, allowed, capped: allowed < amount };
+    });
+    const investmentEntered = investmentItems.reduce((s, i) => s + i.amount, 0);
+    const investment = investmentItems.reduce((s, i) => s + i.allowed, 0);
     const rebateBreakdown = {
       byIncome: Math.round(taxableIncome * rules.rebate.incomeRate),
       byInvestment: Math.round(investment * rules.rebate.investmentRate),
@@ -202,7 +230,7 @@ const BDTax = (() => {
 
     return { rules, salaryFromPeriods, bonus, grossSalary, exemption, otherIncome,
       taxableIncome, threshold, slabs, grossTax,
-      rebateBreakdown, rebate, taxAfterRebate, minimumTax, minimumApplied, finalTax,
+      investmentItems, investmentEntered, investment, rebateBreakdown, rebate, taxAfterRebate, minimumTax, minimumApplied, finalTax,
       plan, investmentAdvice, tds,
       employers: employers.map(({ salary, bonus, gross, tds }) => ({ salary, bonus, gross, tds })),
       netPayable: Math.max(finalTax - tds, 0),

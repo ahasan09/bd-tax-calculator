@@ -22,7 +22,10 @@ eligible investment, or ৳7,50,000.
 **Features:** all official taxpayer categories, mid-year salary changes via
 month-range rows, **several employers in one year** (job change — salaries
 are pooled so the ৳5 lakh exemption cap applies once), bonus and TDS per
-employer, other income / investment, minimum-tax and
+employer, other income, **itemized investments** (provident fund — yours
+and your employer's — DPS up to ৳1,20,000, savings certificates up to
+৳5,00,000, insurance, shares, funds, pension, donations; limits per NBR's
+Aykor Nirdeshika 2026-27), minimum-tax and
 first-time-taxpayer rules, full step-by-step breakdown, an "investing
 ৳X more saves ৳Y" hint, and a **monthly deduction planner**: tax still owed
 after what your office has already deducted, spread over the salary months

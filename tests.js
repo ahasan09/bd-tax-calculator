@@ -472,6 +472,40 @@ test('employers: overlapping months are both counted', () => {
   assertEqual(r.grossSalary, 660000, '600,000 + 60,000 part-time');
 });
 
+// ---- itemized investments ----
+test('investments: every year lists the NBR guide items', () => {
+  const keys = y => BDTax.RULES[y].investmentItems.map(i => i.key);
+  assertEqual(keys('2025-26'), ['providentFund', 'dps', 'govtSecurities', 'lifeInsurance', 'listedShares',
+    'funds', 'universalPension', 'pensionFund', 'donations', 'welfareFund', 'other']);
+  for (const y of BDTax.YEARS) assertEqual(keys(y), keys('2025-26'), y);
+});
+
+test('investments: DPS counts up to 1,20,000 and government securities up to 5,00,000', () => {
+  const r = BDTax.calculateTax({ ...base, investments: { dps: 150000, govtSecurities: 600000, providentFund: 80000 } });
+  const item = k => r.investmentItems.find(i => i.key === k);
+  assertEqual([item('dps').allowed, item('dps').capped], [120000, true]);
+  assertEqual([item('govtSecurities').allowed, item('govtSecurities').capped], [500000, true]);
+  assertEqual([item('providentFund').allowed, item('providentFund').capped], [80000, false]);
+  assertEqual([r.investmentEntered, r.investment], [830000, 700000]);
+});
+
+test('investments: rebate uses the capped total (sample year)', () => {
+  // taxable 913,333 → 3% limb 27,400; DPS 2,00,000 counts 1,20,000 + 1,00,000 → 10% = 22,000
+  const r = BDTax.calculateTax({ ...sample, investment: undefined,
+    investments: { dps: 200000, govtSecurities: 100000 } });
+  assertEqual([r.investment, r.rebate, r.finalTax], [220000, 22000, 40000]);
+});
+
+test('investments: blank, negative and unknown entries are ignored', () => {
+  const r = BDTax.calculateTax({ ...base, investments: { dps: '', lifeInsurance: -5, bogus: 99999, other: '1000.4' } });
+  assertEqual([r.investmentEntered, r.investment], [1000, 1000]);
+});
+
+test('investments: a single total still works (older callers)', () => {
+  const r = BDTax.calculateTax({ ...base, investment: 200000 });
+  assertEqual([r.investment, r.investmentItems.find(i => i.key === 'other').allowed], [200000, 200000]);
+});
+
 if (typeof document !== 'undefined') {
   // ---- render ----
   const ul = document.getElementById('results');

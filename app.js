@@ -137,9 +137,40 @@
       disabledDependents: $('dependents').value,
       employers: readEmployers(),
       otherIncome: $('otherIncome').value,
-      investment: $('investment').value,
+      investments: readInvestments(),
       nextMonth: Number($('nextMonth').value)
     };
+  }
+
+  // ---- itemized investments, built from the engine's item list ----
+  // The first four are the common ones; the rest sit behind "More types".
+  const COMMON_ITEMS = 4;
+  function fillInvestments() {
+    const field = item => `<label class="field">${item.label}` +
+      (item.cap ? `<span class="hint">counts up to ${fmt(item.cap)}</span>` : '') +
+      `<input type="number" min="0" placeholder="0" data-key="${item.key}">` +
+      `<span class="cap-warn" data-warn="${item.key}"></span></label>`;
+    const items = BDTax.RULES[BDTax.YEARS[0]].investmentItems;
+    $('investments').innerHTML = items.slice(0, COMMON_ITEMS).map(field).join('') +
+      `<details><summary>More investment types (shares, funds, pension, donations…)</summary>` +
+      items.slice(COMMON_ITEMS).map(field).join('') + '</details>';
+  }
+
+  function readInvestments() {
+    const out = {};
+    for (const input of $('investments').querySelectorAll('input[data-key]')) out[input.dataset.key] = input.value;
+    return out;
+  }
+
+  // Per-item "only ৳X counts" notes and the eligible total.
+  function renderInvestments(result) {
+    for (const item of result.investmentItems) {
+      $('investments').querySelector(`[data-warn="${item.key}"]`).textContent = item.capped
+        ? `Only ${fmt(item.allowed)} of this counts toward the rebate.` : '';
+    }
+    $('investmentTotal').textContent = result.investmentEntered === 0 ? ''
+      : `Eligible investment: ${fmt(result.investment)}` + (result.investment < result.investmentEntered
+        ? ` (of ${fmt(result.investmentEntered)} entered — amounts above the limits don't count)` : '');
   }
 
   // Next-month picker: follows the chosen year (from today's date) until the
@@ -265,7 +296,9 @@
         : `Investing ${fmt(adv.targetInvestment)} in total earns the maximum rebate of ${fmt(adv.maxUsefulRebate)}.`);
     }
     if (adv.tip) {
-      parts.push(`Investing ${fmt(adv.tip.extraInvestment)} more would save ${fmt(adv.tip.saving)} in tax.`);
+      parts.push(`Investing ${fmt(adv.tip.extraInvestment)} more` +
+        (result.investmentItems.some(i => i.capped) ? ' (in something still under its limit)' : '') +
+        ` would save ${fmt(adv.tip.saving)} in tax.`);
       parts.push(`With the full ${fmt(adv.targetInvestment)} invested, annual tax drops to ` +
         `${fmt(adv.taxIfMaxInvested)}` + (result.plan.monthsLeft > 0
           ? ` — ${fmt(adv.monthlyTdsIfMaxInvested)} per month for the rest of the year.` : '.'));
@@ -280,6 +313,7 @@
     $('salaryWarning').textContent = salaryWarnings(inputs.employers);
     const result = BDTax.calculateTax(inputs);
     render(result);
+    renderInvestments(result);
     $('investmentFormula').textContent = investmentFormula(result);
     $('investmentHint').textContent = investmentHint(result);
     const total = totalView(result);
@@ -307,6 +341,7 @@
 
   fillYears();    // year picker, defaulting to the year most people want today
   fillNextMonth();
+  fillInvestments();
   addEmployer();  // one employer with one full-year row
   recalc();       // initial render (all zeros)
 })();

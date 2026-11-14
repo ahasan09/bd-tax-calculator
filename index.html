@@ -52,6 +52,15 @@
     font-size: 0.85rem; padding: 0.3rem 0; }
   .warn { color: var(--warn); font-size: 0.85rem; min-height: 1.2em; margin: 0.3rem 0 0; }
   .tip { color: var(--accent); font-size: 0.85rem; margin: 0.3rem 0 0; }
+  /* itemized investments */
+  #investments details { margin-bottom: 0.9rem; }
+  #investments summary { cursor: pointer; color: var(--accent); font-size: 0.9rem; padding: 0.4rem 0;
+    margin-bottom: 0.6rem; }
+  .cap-warn { display: block; color: var(--warn); font-size: 0.8rem; font-weight: 400; margin-top: 0.2rem; }
+  .cap-warn:empty { display: none; }
+  .invest-summary { border-left: 3px solid var(--line); padding-left: 0.7rem; margin-bottom: 1rem; }
+  .invest-total { margin: 0 0 0.2rem; font-weight: 600; font-size: 0.95rem; }
+  .invest-summary .hint { margin: 0; }
   /* breakdown pane — ledger/receipt treatment */
   #breakdown { border-top: 4px solid var(--accent); }
   .bd-title { margin: 0 0 0.75rem; font-size: 0.8rem; font-weight: 600;
@@ -144,17 +153,18 @@
     <button type="button" id="addEmployer">+ Add another employer (changed jobs this year)</button>
     <p class="warn" id="salaryWarning" role="status"></p>
 
-    <h2>Other income &amp; investment (yearly totals)</h2>
+    <h2>Other income (yearly total)</h2>
     <label class="field">Other income
       <span class="hint">bank interest, side income etc. — added to taxable income as-is</span>
       <input type="number" id="otherIncome" min="0" placeholder="0">
     </label>
-    <label class="field">Investment eligible for rebate
-      <span class="hint">DPS, sanchayapatra, life insurance premium, provident fund, listed shares</span>
-      <input type="number" id="investment" min="0" placeholder="0">
-      <span class="hint" id="investmentFormula"></span>
-      <span class="tip" id="investmentHint"></span>
-    </label>
+    <h2>Investments for rebate (this year)</h2>
+    <div id="investments"></div>
+    <div class="invest-summary">
+      <p class="invest-total" id="investmentTotal"></p>
+      <p class="hint" id="investmentFormula"></p>
+      <p class="tip" id="investmentHint"></p>
+    </div>
     <h2>Monthly deduction</h2>
     <label class="field">Next salary month
       <span class="hint">the first month not yet deducted — set from today's date</span>
