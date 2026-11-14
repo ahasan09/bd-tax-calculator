@@ -68,7 +68,7 @@ Needs Node.js 24 (LTS).
 npm install
 npm run dev        # local dev server with hot reload
 npm test           # engine, share-link, text and form tests (Vitest)
-npm run build      # type-check, then build the static site into dist/
+npm run build      # type-check, build into dist/, then check every Mantine style the app uses is bundled
 npm run preview    # serve dist/ locally
 ```
 
@@ -81,6 +81,8 @@ npm run preview    # serve dist/ locally
 | `src/i18n/` | English and Bangla text, Bangla digits, the language context. |
 | `src/state/` | Form state and the `useCalculator` hook that turns it into a result. |
 | `src/components/` | The Mantine UI: form sections, result panel, return summary. |
+| `src/mantine-styles.ts` | The Mantine stylesheets the app imports — only what it uses, not the full bundle. |
+| `scripts/check-css.mjs` | Build check: fails (and names the file to add) if a Mantine component is used without its stylesheet. |
 | `tests/` | Vitest suites. |
 
 ## Test
