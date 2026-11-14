@@ -281,12 +281,12 @@ test('final: target investment zero when there is no tax to rebate', () => {
 
 test('final: monthly office deduction and tax after max investment', () => {
   // finalTax 110,000 → ≈9,167/month; with full 390,000 invested the rebate
-  // becomes 39,000 → tax 91,000 → ≈7,583/month
+  // becomes 39,000 → tax 91,000 → 7,583.3 → 7,584/month (rounded up)
   const r = BDTax.calculateTax({ ...base, investment: 200000,
     salaryPeriods: [{ monthlyAmount: 150000, fromMonth: 0, toMonth: 11 }] });
-  assertEqual(r.monthlyTds, 9167);
+  assertEqual(r.plan.perMonth, 9167);
   assertEqual(r.investmentAdvice.taxIfMaxInvested, 91000);
-  assertEqual(r.investmentAdvice.monthlyTdsIfMaxInvested, 7583);
+  assertEqual(r.investmentAdvice.monthlyTdsIfMaxInvested, 7584);
 });
 
 test('final: minimum-tax floor holds after max investment', () => {
@@ -294,13 +294,13 @@ test('final: minimum-tax floor holds after max investment', () => {
   const r = BDTax.calculateTax({ ...base,
     salaryPeriods: [{ monthlyAmount: 51125, fromMonth: 0, toMonth: 11 }] });
   assertEqual(r.investmentAdvice.taxIfMaxInvested, 5000);
-  assertEqual(r.monthlyTds, 417);
+  assertEqual(r.plan.perMonth, 417);
   assertEqual(r.investmentAdvice.monthlyTdsIfMaxInvested, 417);
 });
 
 test('final: monthly figures zero at zero income', () => {
   const r = BDTax.calculateTax({ ...base });
-  assertEqual([r.monthlyTds, r.investmentAdvice.taxIfMaxInvested, r.investmentAdvice.monthlyTdsIfMaxInvested], [0, 0, 0]);
+  assertEqual([r.plan.perMonth, r.investmentAdvice.taxIfMaxInvested, r.investmentAdvice.monthlyTdsIfMaxInvested], [0, 0, 0]);
 });
 
 test('final: all-zero input is all zeros, no NaN', () => {
@@ -365,6 +365,64 @@ test('years: default falls back to the nearest year with rules', () => {
   assertEqual(BDTax.defaultYear(on(2025, 8, 1)), '2025-26', 'filing year 2024-25 not covered');
   assertEqual(BDTax.defaultYear(on(2024, 1, 1)), '2025-26', 'before every year');
   assertEqual(BDTax.defaultYear(on(2032, 1, 1)), '2029-30', 'after every year');
+});
+
+// ---- monthly deduction planner ----
+const sample = { ...base, taxYear: '2026-27', bonus: 110000, investment: 274000,
+  salaryPeriods: [{ monthlyAmount: 100000, fromMonth: 0, toMonth: 5 },
+    { monthlyAmount: 110000, fromMonth: 6, toMonth: 11 }] };
+
+test('plan: mid-year — remaining tax spread over months left (mockup case)', () => {
+  // annual 34,600 − 12,000 deducted Jul–Oct → 22,600 over Nov–Jun (8 months)
+  const p = BDTax.calculateTax({ ...sample, tds: 12000, nextMonth: 4 }).plan;
+  assertEqual([p.remaining, p.monthsLeft, p.perMonth, p.payWithReturn], [22600, 8, 2825, 0]);
+  assertEqual(p.months.map(m => m.status),
+    ['deducted', 'deducted', 'deducted', 'deducted', 'planned', 'planned',
+      'planned', 'planned', 'planned', 'planned', 'planned', 'planned']);
+  assertEqual(p.months[4].amount, 2825);
+  assertEqual(p.months[0].amount, 0, 'past split unknown — no amount shown');
+});
+
+test('plan: whole year when nothing is deducted yet (default)', () => {
+  const p = BDTax.calculateTax({ ...sample }).plan;
+  assertEqual([p.monthsLeft, p.perMonth], [12, 2884], '34,600 ÷ 12 rounded up');
+});
+
+test('plan: rounds up so the plan never falls short', () => {
+  const p = BDTax.calculateTax({ ...sample, tds: 12001, nextMonth: 4 }).plan;
+  assertEqual(p.perMonth, 2825, '22,599 ÷ 8 = 2,824.9 → 2,825');
+  assertEqual(p.perMonth * p.monthsLeft >= p.remaining, true);
+});
+
+test('plan: mid-year joiner — only months with salary count', () => {
+  // joined in January: salary Jan–Jun only; planning from the start
+  const p = BDTax.calculateTax({ ...base, taxYear: '2026-27',
+    salaryPeriods: [{ monthlyAmount: 150000, fromMonth: 6, toMonth: 11 }] }).plan;
+  assertEqual(p.monthsLeft, 6);
+  assertEqual(p.months.slice(0, 6).map(m => m.status), ['none', 'none', 'none', 'none', 'none', 'none']);
+});
+
+test('plan: no salary months left — pay the rest with the return', () => {
+  const p = BDTax.calculateTax({ ...sample, tds: 30000, nextMonth: 12 }).plan;
+  assertEqual([p.monthsLeft, p.perMonth, p.payWithReturn], [0, 0, 4600]);
+});
+
+test('plan: over-deducted — nothing more to deduct', () => {
+  const r = BDTax.calculateTax({ ...sample, tds: 40000, nextMonth: 6 });
+  assertEqual([r.plan.remaining, r.plan.perMonth, r.refundable], [0, 0, 5400]);
+});
+
+test('plan: no salary at all — whole tax paid with the return', () => {
+  const p = BDTax.calculateTax({ ...base, otherIncome: 1000000 }).plan;
+  assertEqual([p.monthsLeft, p.payWithReturn], [0, 75000]);
+});
+
+test('plan: default next month follows the year status', () => {
+  const nov = on(2026, 11, 14);
+  assertEqual(BDTax.defaultNextMonth('2026-27', nov), 4, 'current year: November');
+  assertEqual(BDTax.defaultNextMonth('2025-26', nov), 12, 'filing year: over');
+  assertEqual(BDTax.defaultNextMonth('2027-28', nov), 0, 'planning: from July');
+  assertEqual(BDTax.defaultNextMonth('2026-27', on(2027, 6, 30)), 11, 'June');
 });
 
 if (typeof document !== 'undefined') {

@@ -68,6 +68,23 @@
     color: var(--accent); }
   .bd-total.refund { color: var(--good); }
   .bd-total.refund .amt { color: var(--good); }
+  /* monthly deduction plan */
+  .plan { margin-top: 1.4rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+  .plan-head { margin: 0; font-size: 0.95rem; }
+  .plan-head .amt { font-family: var(--num); font-variant-numeric: tabular-nums;
+    font-size: 1.3rem; font-weight: 700; color: var(--accent); white-space: nowrap; }
+  .plan-sub { display: block; color: var(--muted); font-size: 0.75rem; margin: 0.2rem 0 0.7rem; }
+  .plan-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.35rem; }
+  .plan-cell { border-radius: 6px; padding: 0.35rem 0.15rem; text-align: center; font-size: 0.72rem; }
+  .plan-cell b { display: block; font-weight: 600; }
+  .plan-cell span { font-family: var(--num); font-variant-numeric: tabular-nums; }
+  .plan-cell.deducted { background: #004d38; color: #fff; }
+  .plan-cell.planned { background: #e6f2ee; color: #004d38; }
+  .plan-cell.none { background: #f3f4f6; color: var(--muted); }
+  .plan-key { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; margin-top: 0.5rem;
+    font-size: 0.72rem; color: var(--muted); }
+  .plan-key i { display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 2px;
+    margin-right: 0.3rem; vertical-align: -0.1rem; }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden;
     clip: rect(0 0 0 0); white-space: nowrap; }
   footer { text-align: center; color: var(--muted); font-size: 0.8rem;
@@ -137,9 +154,14 @@
       <span class="hint" id="investmentFormula"></span>
       <span class="tip" id="investmentHint"></span>
     </label>
-    <label class="field">Tax already deducted at office (TDS)
-      <span class="hint">total tax your employer withheld this year</span>
+    <h2>Monthly deduction</h2>
+    <label class="field">Tax deducted so far (TDS)
+      <span class="hint">total your employer has withheld this year up to now</span>
       <input type="number" id="tds" min="0" placeholder="0">
+    </label>
+    <label class="field">Next salary month
+      <span class="hint">the first month not yet deducted — set from today's date</span>
+      <select id="nextMonth"></select>
     </label>
   </form>
 

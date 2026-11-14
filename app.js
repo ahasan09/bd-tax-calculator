@@ -84,8 +84,18 @@
       bonus: $('bonus').value,
       otherIncome: $('otherIncome').value,
       investment: $('investment').value,
-      tds: $('tds').value
+      tds: $('tds').value,
+      nextMonth: Number($('nextMonth').value)
     };
+  }
+
+  // Next-month picker: follows the chosen year (from today's date) until the
+  // user picks a month themselves.
+  let nextMonthTouched = false;
+  function fillNextMonth() {
+    $('nextMonth').innerHTML = BDTax.MONTHS.map((m, i) => `<option value="${i}">${m}</option>`).join('') +
+      '<option value="12">Year is over — all salary paid</option>';
+    $('nextMonth').addEventListener('change', () => { nextMonthTouched = true; });
   }
 
   // ---- render breakdown pane ----
@@ -122,16 +132,54 @@
     h += line('<b>Tax before rebate</b>', `<b>${fmt(result.grossTax)}</b>`, '');
     if (result.rebate > 0) h += line('− Investment rebate', fmt(result.rebate),
       `lowest of ${rebateCandidatesText(result)}`);
-    const annualSub = [];
-    if (result.minimumApplied) annualSub.push(`minimum tax — income above the tax-free limit pays at least ${fmt(result.minimumTax)}`);
-    if (result.finalTax > 0) annualSub.push(`your office deducts ≈ ${fmt(result.monthlyTds)} per month`);
-    h += line('<b>Annual tax</b>', `<b>${fmt(result.finalTax)}</b>`, annualSub.join('; '));
-    if (result.tds > 0) h += line('− Already deducted at office (TDS)', fmt(result.tds), '');
+    h += line('<b>Annual tax</b>', `<b>${fmt(result.finalTax)}</b>`, result.minimumApplied
+      ? `minimum tax — income above the tax-free limit pays at least ${fmt(result.minimumTax)}` : '');
+    if (result.tds > 0) h += line('− Deducted so far (TDS)', fmt(result.tds), '');
     h += `<div class="bd-tear"></div>`;
     const total = totalView(result);
     h += `<div class="bd-total${total.refund ? ' refund' : ''}">` +
       `<span>${total.label}</span><span class="amt">${total.amount}</span></div>`;
+    h += renderPlan(result);
     $('breakdown').innerHTML = h;
+  }
+
+  // ---- monthly deduction plan ----
+  // Headline + formula for every case the planner can be in.
+  function planText(result) {
+    const p = result.plan;
+    const left = p.months.map((m, i) => m.status === 'planned' ? i : -1).filter(i => i >= 0);
+    const span = left.length ? `${BDTax.MONTHS[left[0]]}–${BDTax.MONTHS[left[left.length - 1]]}` : '';
+    if (result.finalTax === 0) return { head: 'No tax to deduct this year.' };
+    if (result.refundable > 0) return { head: `Already over-deducted by ${fmt(result.refundable)} — ` +
+      'nothing more to deduct; claim it in your return.' };
+    if (p.remaining === 0) return { head: 'Fully deducted — nothing more this year.' };
+    if (p.monthsLeft === 0) return { head: `No salary months left — pay ` +
+      `<span class="amt">${fmt(p.payWithReturn)}</span> with your return.` };
+    return {
+      head: `Your office should deduct <span class="amt">${fmt(p.perMonth)}</span> per month` +
+        (p.monthsLeft < 12 ? `, ${span}` : ''),
+      sub: result.tds > 0
+        ? `(${fmt(result.finalTax)} annual tax − ${fmt(result.tds)} already deducted) ÷ ${p.monthsLeft} salary months left`
+        : `${fmt(result.finalTax)} annual tax ÷ ${p.monthsLeft} salary months`
+    };
+  }
+
+  function renderPlan(result) {
+    const p = result.plan;
+    if (result.grossSalary === 0 && result.finalTax === 0) return '';
+    const t = planText(result);
+    let h = `<div class="plan"><h2 class="bd-title">Monthly deduction</h2>` +
+      `<p class="plan-head">${t.head}</p>` + (t.sub ? `<small class="plan-sub">${t.sub}</small>` : '');
+    if (p.months.some(m => m.status !== 'none')) {
+      h += '<div class="plan-grid">' + p.months.map((m, i) =>
+        `<div class="plan-cell ${m.status}"><b>${BDTax.MONTHS[i]}</b>` +
+        `<span>${m.status === 'planned' ? fmt(m.amount).slice(1) : m.status === 'deducted' ? 'done' : '—'}</span></div>`
+      ).join('') + '</div>';
+      h += '<div class="plan-key"><span><i style="background:#004d38"></i>deducted</span>' +
+        '<span><i style="background:#e6f2ee"></i>still to deduct</span>' +
+        '<span><i style="background:#f3f4f6"></i>no salary</span></div>';
+    }
+    return h + '</div>';
   }
 
   // One place decides how the bottom line reads — pane, live region, and bar.
@@ -162,13 +210,15 @@
     if (adv.tip) {
       parts.push(`Investing ${fmt(adv.tip.extraInvestment)} more would save ${fmt(adv.tip.saving)} in tax.`);
       parts.push(`With the full ${fmt(adv.targetInvestment)} invested, annual tax drops to ` +
-        `${fmt(adv.taxIfMaxInvested)} — ≈ ${fmt(adv.monthlyTdsIfMaxInvested)} per month from salary.`);
+        `${fmt(adv.taxIfMaxInvested)}` + (result.plan.monthsLeft > 0
+          ? ` — ${fmt(adv.monthlyTdsIfMaxInvested)} per month for the rest of the year.` : '.'));
     }
     return parts.join(' ');
   }
 
   // ---- main loop ----
   function recalc() {
+    if (!nextMonthTouched) $('nextMonth').value = BDTax.defaultNextMonth($('taxYear').value);
     const inputs = readInputs();
     $('salaryWarning').textContent = salaryWarnings(inputs.salaryPeriods);
     const result = BDTax.calculateTax(inputs);
@@ -196,6 +246,7 @@
   }
 
   fillYears();    // year picker, defaulting to the year most people want today
+  fillNextMonth();
   addRow();       // start with one full-year row
   recalc();       // initial render (all zeros)
 })();

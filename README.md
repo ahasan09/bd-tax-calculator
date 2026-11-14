@@ -21,8 +21,10 @@ eligible investment, or ৳7,50,000.
 
 **Features:** all official taxpayer categories, mid-year salary changes via
 month-range rows, bonus / other income / investment / TDS, minimum-tax and
-first-time-taxpayer rules, full step-by-step breakdown, and an "investing
-৳X more saves ৳Y" hint.
+first-time-taxpayer rules, full step-by-step breakdown, an "investing
+৳X more saves ৳Y" hint, and a **monthly deduction planner**: tax still owed
+after what your office has already deducted, spread over the salary months
+left in the year (mid-year joiners and "pay with return" cases included).
 
 ## Run
 

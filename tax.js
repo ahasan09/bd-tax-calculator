@@ -168,27 +168,53 @@ const BDTax = (() => {
         };
       }
     }
-    // Annual tax if the full target investment were made, and its ÷12.
+    const tds = Math.round(toNonNegativeAmount(inputs.tds));
+    // Months 0..11 in which a salary is paid — the employer can only deduct then.
+    const salaryMonths = MONTHS.map((_, m) => validPeriods.some(p =>
+      toNonNegativeAmount(p.monthlyAmount) > 0 && m >= Number(p.fromMonth) && m <= Number(p.toMonth)));
+    const nextMonth = Math.min(Math.max(Math.floor(Number(inputs.nextMonth) || 0), 0), 12);
+    const plan = planDeductions(finalTax, tds, salaryMonths, nextMonth);
+
+    // Annual tax if the full target investment were made, and the monthly
+    // deduction that would follow from it.
     const taxIfMaxInvested = aboveThreshold
       ? Math.max(grossTax - maxUsefulRebate, minimumTax) : 0;
     const investmentAdvice = {
       maxUsefulRebate, targetInvestment, tip,
       taxIfMaxInvested,
-      monthlyTdsIfMaxInvested: Math.round(taxIfMaxInvested / 12)
+      monthlyTdsIfMaxInvested: planDeductions(taxIfMaxInvested, tds, salaryMonths, nextMonth).perMonth
     };
-
-    // Approximate per-month salary deduction (annual tax ÷ 12).
-    const monthlyTds = Math.round(finalTax / 12);
-
-    const tds = Math.round(toNonNegativeAmount(inputs.tds));
 
     return { rules, salaryFromPeriods, bonus, grossSalary, exemption, otherIncome,
       taxableIncome, threshold, slabs, grossTax,
       rebateBreakdown, rebate, taxAfterRebate, minimumTax, minimumApplied, finalTax,
-      monthlyTds, investmentAdvice, tds,
+      plan, investmentAdvice, tds,
       netPayable: Math.max(finalTax - tds, 0),
       refundable: Math.max(tds - finalTax, 0) };
   }
 
-  return { RULES, YEARS, MONTHS, formatBDT, calculateTax, yearStatus, defaultYear };
+  // What the employer still has to deduct, spread evenly over the salary
+  // months from `nextMonth` on (rounded up so the plan never falls short).
+  // Months before `nextMonth` are already deducted; their split is unknown.
+  function planDeductions(annualTax, deducted, salaryMonths, nextMonth) {
+    const remaining = Math.max(annualTax - deducted, 0);
+    const monthsLeft = salaryMonths.filter((paid, m) => paid && m >= nextMonth).length;
+    const perMonth = monthsLeft > 0 ? Math.ceil(remaining / monthsLeft) : 0;
+    const months = salaryMonths.map((paid, m) => !paid ? { status: 'none', amount: 0 }
+      : m < nextMonth ? { status: 'deducted', amount: 0 }
+      : { status: 'planned', amount: perMonth });
+    return { nextMonth, remaining, monthsLeft, perMonth, months,
+      payWithReturn: monthsLeft > 0 ? 0 : remaining };
+  }
+
+  // Month index (0 = July … 11 = June, 12 = year over) of the next salary
+  // deduction for a year, as of `date`.
+  function defaultNextMonth(key, date = new Date()) {
+    const status = yearStatus(key, date);
+    if (status === 'planning') return 0;
+    if (status === 'current') return (date.getMonth() + 6) % 12;
+    return 12;
+  }
+
+  return { RULES, YEARS, MONTHS, formatBDT, calculateTax, yearStatus, defaultYear, defaultNextMonth };
 })();
