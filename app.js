@@ -139,6 +139,8 @@
       otherIncomes: {
         bankInterest: { amount: $('bankInterest').value, tds: $('bankTds').value },
         savingsInterest: { amount: $('savingsInterest').value, tds: $('savingsTds').value },
+        rent: { amount: $('rentIncome').value },
+        agriculture: { amount: $('agriIncome').value },
         other: { amount: $('otherIncome').value }
       },
       advanceTax: $('advanceTax').value,
@@ -200,7 +202,8 @@
   }
 
   const OTHER_INCOME_LABELS = {
-    bankInterest: 'Bank interest', savingsInterest: 'Savings certificate profit', other: 'Other income'
+    bankInterest: 'Bank interest', savingsInterest: 'Savings certificate profit',
+    rent: 'Rent income', agriculture: 'Agriculture income', other: 'Other income'
   };
 
   function line(lbl, amt, sub) {
@@ -320,6 +323,88 @@
     return parts.join(' ');
   }
 
+  // ---- return summary: IT-11GA (2023) serials, from BDTax.returnSummary ----
+  // English label + the form's own Bangla wording, so rows are easy to match.
+  const RETURN_LABELS = {
+    employment: ['Income from employment (Schedule 1)', 'চাকরি হইতে আয়'],
+    rent: ['Income from rent', 'ভাড়া হইতে আয়'],
+    agriculture: ['Income from agriculture', 'কৃষি হইতে আয়'],
+    financialAssets: ['Income from financial assets — bank interest, savings certificates', 'আর্থিক পরিসম্পদ হইতে আয়'],
+    otherSources: ['Income from other sources', 'অন্যান্য উৎস হইতে আয়'],
+    totalIncome: ['Total income', 'মোট আয়'],
+    taxOnIncome: ['Tax on total income', 'মোট আয়ের উপর আরোপযোগ্য আয়কর'],
+    rebate: ['Tax rebate (Schedule 5)', 'কর রেয়াত'],
+    afterRebate: ['Tax after rebate (12 − 13)', 'রেয়াত-পরবর্তী প্রদেয় করদায়'],
+    minimumTax: ['Minimum tax', 'ন্যূনতম কর'],
+    payableTax: ['Payable tax — higher of 14 and 15', 'প্রদেয় কর'],
+    totalPayable: ['Total payable (16 + 17 + 18)', 'মোট প্রদেয় কর'],
+    deductedAtSource: ['Tax deducted / collected at source', 'উৎসে কর্তিত/সংগৃহীত কর'],
+    advanceTax: ['Advance tax paid', 'পরিশোধিত অগ্রিম কর'],
+    paidWithReturn: ['Tax paid with this return', 'এই রিটার্নের সহিত পরিশোধিত অবশিষ্ট কর'],
+    totalPaid: ['Total tax paid (20 + 21 + 22 + 23)', 'প্রদত্ত কর'],
+    excessPayment: ['Excess payment (refundable)', 'অতিরিক্ত পরিশোধ'],
+    exemptIncome: ['Tax-exempt income — incl. the ⅓ salary exemption', 'কর অব্যাহতিপ্রাপ্ত/করমুক্ত আয়']
+  };
+  const TOTAL_ROWS = [11, 19, 24];
+  const NOT_COVERED = 'Not covered here: business income (4), capital gains (5), share of firm income (8), ' +
+    'spouse/minor child income (9), foreign income (10), net-wealth and environmental surcharge (17), ' +
+    'late-filing interest or penalties (18) and refund adjustment (22).';
+
+  function investmentLabel(key) {
+    return BDTax.RULES[BDTax.YEARS[0]].investmentItems.find(i => i.key === key).label;
+  }
+
+  function renderReturn(result) {
+    const s = BDTax.returnSummary(result);
+    const r = result.rules;
+    $('returnSub').textContent = `IT-11GA (2023) · ${r.label} · rules per ${r.source} — ` +
+      'figures in the order the return form asks for them';
+    const table = rows => '<table class="ret-table"><tbody>' + rows.map(row => {
+      const [en, bn] = RETURN_LABELS[row.key];
+      return `<tr${TOTAL_ROWS.includes(row.serial) ? ' class="total"' : ''}><td class="sn">${row.serial}</td>` +
+        `<td>${en}<small lang="bn">${bn}</small></td><td class="amt">${fmt(row.amount)}</td></tr>`;
+    }).join('') + '</tbody></table>';
+    const plain = rows => '<table class="ret-table"><tbody>' + rows.map(([label, amount, total]) =>
+      `<tr${total ? ' class="total"' : ''}><td>${label}</td><td class="amt">${fmt(amount)}</td></tr>`).join('') + '</tbody></table>';
+    $('returnBody').innerHTML = '<div class="return-grid">' +
+      `<div><h3>Statement of total income</h3>${table(s.income)}</div>` +
+      `<div><h3>Tax computation</h3>${table(s.tax)}</div>` +
+      `<div><h3>Tax payment</h3>${table(s.payment)}</div>` +
+      `<div><h3>Schedule 1 — salary</h3>${plain([['Gross salary received', s.schedule1.gross],
+        ['Tax-exempt (⅓, max ৳5,00,000)', s.schedule1.exempt], ['Taxable salary', s.schedule1.taxable, true]])}` +
+      `<h3>Schedule 5 — investment rebate</h3>${plain([
+        ...s.schedule5.items.map(i => [investmentLabel(i.key), i.amount]),
+        ['Total eligible investment', s.schedule5.total, true], ['Rebate', s.schedule5.rebate, true]])}</div>` +
+      `</div><p class="ret-note">${NOT_COVERED} Estimates only — check before you file.</p>`;
+  }
+
+  // Plain text for pasting: serial, label, amount (no ৳ or commas).
+  function returnText(result) {
+    const s = BDTax.returnSummary(result);
+    const lines = [`Return summary — IT-11GA (2023), ${result.rules.label}`, ''];
+    const block = (title, rows) => {
+      lines.push(title);
+      for (const row of rows) lines.push(`${row.serial}\t${RETURN_LABELS[row.key][0]}\t${row.amount}`);
+      lines.push('');
+    };
+    block('Statement of total income', s.income);
+    block('Tax computation', s.tax);
+    block('Tax payment', s.payment);
+    lines.push('Schedule 5 — investment rebate');
+    for (const i of s.schedule5.items) lines.push(`\t${investmentLabel(i.key)}\t${i.amount}`);
+    lines.push(`\tTotal eligible investment\t${s.schedule5.total}`, `\tRebate\t${s.schedule5.rebate}`);
+    return lines.join('\n');
+  }
+
+  function copyReturn() {
+    const text = returnText(BDTax.calculateTax(readInputs()));
+    const done = msg => { $('returnStatus').textContent = msg; };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(() => done('Copied — paste into a spreadsheet or note.'),
+        () => done('Copying was blocked by the browser — use Print / save PDF instead.'));
+    } else done('Copying isn\'t available here — use Print / save PDF instead.');
+  }
+
   // ---- share link: form <-> #s=… ----
   // Fill the form from decoded link state (see state.js; already validated).
   function writeInputs(st) {
@@ -346,6 +431,8 @@
     $('bankTds').value = o.bankInterest.tds || '';
     $('savingsInterest').value = o.savingsInterest.amount || '';
     $('savingsTds').value = o.savingsInterest.tds || '';
+    $('rentIncome').value = o.rent.amount || '';
+    $('agriIncome').value = o.agriculture.amount || '';
     $('otherIncome').value = o.other.amount || '';
     $('advanceTax').value = st.advanceTax || '';
     for (const input of $('investments').querySelectorAll('input[data-key]')) {
@@ -389,6 +476,8 @@
     const result = BDTax.calculateTax(inputs);
     render(result);
     renderInvestments(result);
+    renderReturn(result);
+    $('returnStatus').textContent = '';
     $('investmentFormula').textContent = investmentFormula(result);
     $('investmentHint').textContent = investmentHint(result);
     const total = totalView(result);
@@ -407,6 +496,8 @@
   });
   $('form').addEventListener('input', () => { showShareStatus(''); $('shareUrl').hidden = true; recalc(); });
   $('shareBtn').addEventListener('click', shareLink);
+  $('printReturn').addEventListener('click', () => window.print());
+  $('copyReturn').addEventListener('click', copyReturn);
 
   // Hide the mobile total bar while the real breakdown pane is on screen.
   if ('IntersectionObserver' in window) {

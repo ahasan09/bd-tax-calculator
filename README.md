@@ -33,6 +33,11 @@ first-time-taxpayer rules, full step-by-step breakdown, an "investing
 after what your office has already deducted, spread over the salary months
 left in the year (mid-year joiners and "pay with return" cases included).
 
+**Return summary:** your figures in the order the individual return form
+(IT-11GA 2023) asks for them — income serials 1–11, tax computation 12–19,
+payment 20–26, plus Schedule 1 (salary) and Schedule 5 (rebate), each with
+the form's own Bangla wording. Print / save as PDF, or copy as text.
+
 **Share link:** "Copy share link" puts your inputs into the part of the URL
 after `#`, which browsers never send to a server — the link itself is the
 only copy. Anyone you give it to sees your figures. Links are validated when

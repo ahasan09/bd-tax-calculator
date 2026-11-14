@@ -512,7 +512,8 @@ test('other income: interest is taxed in the slabs; its TDS is a credit', () => 
     bankInterest: { amount: 350000, tds: 35000 }, savingsInterest: { amount: 300000, tds: 30000 } } });
   assertEqual([r.otherIncome, r.sourceTds, r.tds], [650000, 65000, 65000]);
   assertEqual(r.otherIncomeItems.map(i => [i.key, i.amount, i.tds]),
-    [['bankInterest', 350000, 35000], ['savingsInterest', 300000, 30000], ['other', 0, 0]]);
+    [['bankInterest', 350000, 35000], ['savingsInterest', 300000, 30000], ['rent', 0, 0],
+      ['agriculture', 0, 0], ['other', 0, 0]]);
 });
 
 test('other income: advance tax and every TDS reduce what is still owed', () => {
@@ -588,6 +589,12 @@ test('share: round-trip gives the same tax result', () => {
   assertEqual(back.employers.map(e => e.salaryPeriods.length), [1, 1]);
 });
 
+test('share: rent and agriculture survive the round-trip', () => {
+  const st = { ...formState, otherIncomes: { ...formState.otherIncomes, rent: { amount: '130000' }, agriculture: { amount: '60000' } } };
+  const back = BDState.decode(BDState.encode(st)).otherIncomes;
+  assertEqual([back.rent.amount, back.agriculture.amount, back.other.amount], [130000, 60000, 5000]);
+});
+
 test('share: next month is left out unless the user chose it', () => {
   assertEqual(BDState.decode(BDState.encode(formState)).nextMonth, undefined);
 });
@@ -615,6 +622,38 @@ test('share: hostile values are dropped, not passed through', () => {
   assertEqual([d.employers[0].bonus, d.employers[0].tds], [0, 0]);
   assertEqual(d.otherIncomes.bankInterest, { amount: 1000, tds: 0 });
   assertEqual([d.investments.dps, 'evil' in d.investments], [1000, false]);
+});
+
+// ---- return summary (IT-11GA 2023 serials) ----
+const exampleKa = { ...base, category: 'woman',
+  employers: [{ salaryPeriods: [{ monthlyAmount: 99000, fromMonth: 0, toMonth: 11 }], bonus: 105000, tds: 36000 }],
+  otherIncomes: { bankInterest: { amount: 110000, tds: 11000 }, rent: { amount: 130000 }, agriculture: { amount: 60000 } },
+  investments: { govtSecurities: 250000, lifeInsurance: 60000 } };
+const serials = rows => Object.fromEntries(rows.map(r => [r.serial, r.amount]));
+
+test('return: NBR example ক fills the IT-11GA serials', () => {
+  const s = BDTax.returnSummary(BDTax.calculateTax(exampleKa));
+  assertEqual(serials(s.income), { 1: 862000, 2: 130000, 3: 60000, 6: 110000, 7: 0, 11: 1162000 });
+  assertEqual(serials(s.tax), { 12: 92400, 13: 31000, 14: 61400, 15: 5000, 16: 61400, 19: 61400 });
+  assertEqual(serials(s.payment), { 20: 47000, 21: 0, 23: 14400, 24: 61400, 25: 0, 26: 431000 });
+});
+
+test('return: schedule 1 (salary) and schedule 5 (rebate)', () => {
+  const s = BDTax.returnSummary(BDTax.calculateTax(exampleKa));
+  assertEqual([s.schedule1.gross, s.schedule1.exempt, s.schedule1.taxable], [1293000, 431000, 862000]);
+  assertEqual(s.schedule5.items.map(i => [i.key, i.amount]), [['govtSecurities', 250000], ['lifeInsurance', 60000]]);
+  assertEqual([s.schedule5.total, s.schedule5.rebate], [310000, 31000]);
+});
+
+test('return: over-paid tax shows as excess payment (serial 25), nothing paid with return', () => {
+  const r = BDTax.calculateTax({ ...exampleKa, advanceTax: 20000 });
+  const pay = serials(BDTax.returnSummary(r).payment);
+  assertEqual([pay[20], pay[21], pay[23], pay[24], pay[25]], [47000, 20000, 0, 67000, 5600]);
+});
+
+test('return: minimum tax (serial 15) is 0 at or below the tax-free limit', () => {
+  const s = BDTax.returnSummary(BDTax.calculateTax({ ...base, otherIncome: 300000 }));
+  assertEqual(serials(s.tax)[15], 0);
 });
 
 if (typeof document !== 'undefined') {

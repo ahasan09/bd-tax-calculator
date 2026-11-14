@@ -52,7 +52,9 @@ const BDState = (() => {
         b: amount(e.bonus),
         t: amount(e.tds)
       })),
-      o: compact({ bi: pair(o.bankInterest), si: pair(o.savingsInterest), ot: amount(o.other && o.other.amount) }),
+      o: compact({ bi: pair(o.bankInterest), si: pair(o.savingsInterest),
+        rt: amount(o.rent && o.rent.amount), ag: amount(o.agriculture && o.agriculture.amount),
+        ot: amount(o.other && o.other.amount) }),
       a: amount(inputs.advanceTax),
       i: compact(Object.fromEntries(Object.entries(inputs.investments || {}).map(([k, v]) => [k, amount(v)]))),
       n: keepNextMonth ? inputs.nextMonth : undefined
@@ -85,7 +87,8 @@ const BDState = (() => {
 
     const o = raw.o && typeof raw.o === 'object' ? raw.o : {};
     const pair = p => Array.isArray(p) ? { amount: amount(p[0]) || 0, tds: amount(p[1]) || 0 } : { amount: 0, tds: 0 };
-    out.otherIncomes = { bankInterest: pair(o.bi), savingsInterest: pair(o.si), other: { amount: amount(o.ot) || 0 } };
+    out.otherIncomes = { bankInterest: pair(o.bi), savingsInterest: pair(o.si),
+      rent: { amount: amount(o.rt) || 0 }, agriculture: { amount: amount(o.ag) || 0 }, other: { amount: amount(o.ot) || 0 } };
     out.advanceTax = amount(raw.a) || 0;
 
     const inv = raw.i && typeof raw.i === 'object' ? raw.i : {};

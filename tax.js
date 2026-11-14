@@ -57,7 +57,8 @@ const BDTax = (() => {
   ];
 
   // Kinds of non-salary income the form asks for, in display order.
-  const OTHER_INCOME_KEYS = ['bankInterest', 'savingsInterest', 'other'];
+  // (rent and agriculture are entered after their own allowed expenses.)
+  const OTHER_INCOME_KEYS = ['bankInterest', 'savingsInterest', 'rent', 'agriculture', 'other'];
 
   const COMMON = {
     source: SOURCE,
@@ -255,6 +256,50 @@ const BDTax = (() => {
       refundable: Math.max(tds - finalTax, 0) };
   }
 
+  // The figures in the order the individual return (IT-11GA 2023) asks for
+  // them — "মোট আয়ের বিবরণী" serials 1–11, "কর পরিগণনা" 12–19, "কর পরিশোধ
+  // বিবরণ" 20–26 — plus Schedule 1 (salary) and Schedule 5 (rebate). Serials
+  // this calculator doesn't cover (business, capital gains, surcharge…) are
+  // left out rather than shown as zero.
+  function returnSummary(result) {
+    const other = key => result.otherIncomeItems.find(i => i.key === key).amount;
+    const employment = result.grossSalary - result.exemption;
+    const sourceAndEmployerTds = result.employerTds + result.sourceTds;
+    const row = (serial, key, amount) => ({ serial, key, amount });
+    return {
+      income: [
+        row(1, 'employment', employment),
+        row(2, 'rent', other('rent')),
+        row(3, 'agriculture', other('agriculture')),
+        row(6, 'financialAssets', other('bankInterest') + other('savingsInterest')),
+        row(7, 'otherSources', other('other')),
+        row(11, 'totalIncome', result.taxableIncome)
+      ],
+      tax: [
+        row(12, 'taxOnIncome', result.grossTax),
+        row(13, 'rebate', result.rebate),
+        row(14, 'afterRebate', result.taxAfterRebate),
+        row(15, 'minimumTax', result.minimumTax),
+        row(16, 'payableTax', result.finalTax),
+        row(19, 'totalPayable', result.finalTax)
+      ],
+      payment: [
+        row(20, 'deductedAtSource', sourceAndEmployerTds),
+        row(21, 'advanceTax', result.advanceTax),
+        row(23, 'paidWithReturn', result.netPayable),
+        row(24, 'totalPaid', sourceAndEmployerTds + result.advanceTax + result.netPayable),
+        row(25, 'excessPayment', result.refundable),
+        row(26, 'exemptIncome', result.exemption)
+      ],
+      schedule1: { gross: result.grossSalary, exempt: result.exemption, taxable: employment },
+      schedule5: {
+        items: result.investmentItems.filter(i => i.allowed > 0).map(i => ({ key: i.key, amount: i.allowed })),
+        total: result.investment,
+        rebate: result.rebate
+      }
+    };
+  }
+
   // What the employer still has to deduct, spread evenly over the salary
   // months from `nextMonth` on (rounded up so the plan never falls short).
   // Months before `nextMonth` are already deducted; their split is unknown.
@@ -278,5 +323,5 @@ const BDTax = (() => {
     return 12;
   }
 
-  return { RULES, YEARS, MONTHS, formatBDT, calculateTax, yearStatus, defaultYear, defaultNextMonth };
+  return { RULES, YEARS, MONTHS, formatBDT, calculateTax, returnSummary, yearStatus, defaultYear, defaultNextMonth };
 })();
