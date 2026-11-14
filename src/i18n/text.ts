@@ -212,7 +212,8 @@ export const T: Record<Lang, Record<string, string>> = {
     'ret.row.exemptIncome': 'Tax-exempt income — incl. the ⅓ salary exemption',
 
     'footer.basis': '{year} rules per {source}.',
-    'footer.note': 'Estimates only — not tax advice. Official source:'
+    'footer.note': 'Estimates only — not tax advice. Official source:',
+    'footer.offline': 'Works offline'
   },
 
   bn: {
@@ -419,6 +420,7 @@ export const T: Record<Lang, Record<string, string>> = {
     'ret.row.exemptIncome': 'কর অব্যাহতিপ্রাপ্ত/করমুক্ত আয় (বেতনের ⅓ সহ)',
 
     'footer.basis': '{year}-এর হার: {source}।',
-    'footer.note': 'শুধু আনুমানিক হিসাব — কর পরামর্শ নয়। সরকারি উৎস:'
+    'footer.note': 'শুধু আনুমানিক হিসাব — কর পরামর্শ নয়। সরকারি উৎস:',
+    'footer.offline': 'অফলাইনেও চলে'
   }
 };

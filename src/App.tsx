@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActionIcon, Affix, Anchor, Box, Container, Grid, Group, Paper, SegmentedControl, Stack, Tabs, Text, Title,
   useComputedColorScheme, useMantineColorScheme
@@ -32,10 +32,27 @@ function SchemeToggle() {
   );
 }
 
+// True once the service worker is active and the app can open offline.
+function useOfflineReady() {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    let live = true;
+    navigator.serviceWorker.getRegistration().then(reg => {
+      if (reg) navigator.serviceWorker.ready.then(() => live && setReady(true));
+    });
+    const onChange = () => live && setReady(true);
+    navigator.serviceWorker.addEventListener('controllerchange', onChange);
+    return () => { live = false; navigator.serviceWorker.removeEventListener('controllerchange', onChange); };
+  }, []);
+  return ready;
+}
+
 export function App() {
   const { i18n, setLang } = useLang();
   const { t } = i18n;
   const calc = useCalculator();
+  const offlineReady = useOfflineReady();
   const [view, setView] = useState<string | null>('calc');
   // Mobile: keep the total in view while the result pane is off screen.
   const { ref: resultRef, entry } = useIntersection({ threshold: 0.15 });
@@ -99,6 +116,7 @@ export function App() {
           {t('footer.basis', { year: yearName(i18n, calc.result.rules), source: t('rules.source') })}{' '}
           {t('footer.note')}{' '}
           <Anchor href="https://nbr.gov.bd" target="_blank" rel="noopener" size="xs">nbr.gov.bd</Anchor>
+          {offlineReady && <> · {t('footer.offline')}</>}
         </Text>
       </Container>
 

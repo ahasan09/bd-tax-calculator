@@ -56,6 +56,12 @@ text, touch targets at least 36 px. On phones the result total stays pinned
 to the bottom of the screen; the monthly plan grid picks 3, 4 or 6 columns
 from the space it actually has.
 
+**Offline and installable:** after the first visit the calculator opens and
+works with no connection, and it can be installed to a phone or desktop home
+screen. A small service worker caches only the app's own files — nothing you
+type is stored. Online, the page always comes from the network, so a new
+deploy is picked up on the next visit and the old cache is removed.
+
 **Return summary:** your figures in the order the individual return form
 (IT-11GA 2023) asks for them — income serials 1–11, tax computation 12–19,
 payment 20–26, plus Schedule 1 (salary) and Schedule 5 (rebate), each with
@@ -75,7 +81,7 @@ npm install
 npm run dev        # local dev server with hot reload
 npm test           # engine, share-link, text and form tests (Vitest)
 npm run build      # type-check, build into dist/, then check every Mantine style the app uses is bundled
-npm run preview    # serve dist/ locally
+npm run preview    # serve dist/ locally (the service worker only runs in this production build)
 ```
 
 ## Project layout
@@ -89,6 +95,7 @@ npm run preview    # serve dist/ locally
 | `src/components/` | The Mantine UI: form sections, result panel, return summary. |
 | `src/mantine-styles.ts` | The Mantine stylesheets the app imports — only what it uses, not the full bundle. |
 | `scripts/check-css.mjs` | Build check: fails (and names the file to add) if a Mantine component is used without its stylesheet. |
+| `pwa/` | The service worker template and the Vite plugin that fills in its file list and version at build time. |
 | `public/` | Icons (SVG, ICO, Apple touch, 192/512 and maskable PNGs) and the web app manifest. |
 | `tests/` | Vitest suites. |
 
