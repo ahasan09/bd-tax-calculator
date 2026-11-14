@@ -77,7 +77,7 @@ export function ReturnSummary({ result }: { result: TaxResult }) {
   };
 
   return (
-    <Paper withBorder p="lg" className="return-panel">
+    <Paper withBorder p={{ base: 'md', sm: 'lg' }} className="return-panel">
       <Stack gap="md">
         <Group justify="space-between" align="flex-start" gap="sm">
           <div style={{ flex: '1 1 20rem' }}>

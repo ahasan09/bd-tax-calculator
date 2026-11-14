@@ -15,7 +15,7 @@ export function OtherIncome({ calc }: { calc: Calculator }) {
   );
 
   return (
-    <Paper withBorder p="lg">
+    <Paper withBorder p={{ base: 'md', sm: 'lg' }}>
       <Stack gap="md">
         <div>
           <Title order={2} size="h4">{t('other.heading')}</Title>

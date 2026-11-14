@@ -6,6 +6,28 @@
   clip: rect(0 0 0 0); white-space: nowrap;
 }
 
+/* Salary period row: [amount][months][✕] on one line; below 40em the
+   months move to their own full-width line so the dropdowns stay readable. */
+.period-row {
+  display: grid; gap: 8px; align-items: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "amount remove" "months months";
+}
+.period-amount { grid-area: amount; min-width: 0; }
+.period-months { grid-area: months; min-width: 0; }
+.period-remove { grid-area: remove; }
+@media (min-width: 40em) {
+  .period-row { grid-template-columns: minmax(8rem, 1fr) minmax(0, 1.25fr) auto;
+    grid-template-areas: "amount months remove"; }
+}
+
+/* Monthly plan: 12 month cells. A cell needs ~67px ("৭,০৬,১২৫",
+   "ফেব্রুয়ারি"), so pick 3, 4 or 6 columns from the grid's own width. */
+.plan-wrap { container-type: inline-size; }
+.plan-grid { display: grid; gap: 6px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@container (min-width: 290px) { .plan-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@container (min-width: 440px) { .plan-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+
 /* Return summary tables (plain HTML; Mantine colour variables keep both themes right). */
 .ret-table { width: 100%; border-collapse: collapse; font-size: var(--mantine-font-size-sm); }
 .ret-table td { padding: 6px 4px; border-bottom: 1px solid var(--mantine-color-default-border); vertical-align: top; }
@@ -45,4 +67,9 @@
   /* compact type on paper so the summary fits one page in both languages */
   .return-panel, .return-panel td, .return-panel small, .return-panel .mantine-Text-root { font-size: 10.5px !important; line-height: 1.35 !important; }
   .return-panel h2 { font-size: 16px !important; }
+  /* Same compact type for the breakdown and plan (headline totals keep their
+     size); never split the month grid. */
+  .result-panel .mantine-Text-root:is([data-size="sm"], [data-size="xs"]) { font-size: 11px !important; line-height: 1.35 !important; }
+  .result-panel .mantine-Stack-root { gap: 4px !important; }
+  .plan-wrap { break-inside: avoid; }
 }

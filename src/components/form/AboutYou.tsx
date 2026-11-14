@@ -12,17 +12,17 @@ export function AboutYou({ calc }: { calc: Calculator }) {
 
   const years = YEARS.map(y => ({
     value: y,
-    label: t('year.option', { iy: digits(RULES[y].incomeYear), ay: digits(RULES[y].assessmentYear),
-      tag: t('year.tag.' + yearStatus(y)) })
+    label: t('year.option', { iy: digits(RULES[y].incomeYear), tag: t('year.tag.' + yearStatus(y)) })
   }));
 
   return (
-    <Paper withBorder p="lg">
+    <Paper withBorder p={{ base: 'md', sm: 'lg' }}>
       <Stack gap="md">
         <Title order={2} size="h4">{t('section.about')}</Title>
         <NativeSelect
           label={t('year.label')}
-          description={t('year.hint.' + yearStatus(form.taxYear))}
+          // The assessment year lives here, keeping the dropdown short enough for small phones.
+          description={`${t('year.ay', { ay: digits(rules.assessmentYear) })} · ${t('year.hint.' + yearStatus(form.taxYear))}`}
           data={years}
           value={form.taxYear}
           onChange={e => actions.update({ taxYear: e.currentTarget.value })}

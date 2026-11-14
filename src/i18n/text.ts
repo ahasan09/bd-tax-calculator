@@ -28,7 +28,8 @@ export const T: Record<Lang, Record<string, string>> = {
     'plan.empty': 'Enter your salary to see how much your office should deduct each month.',
 
     'year.label': 'Tax year',
-    'year.option': '{iy} (AY {ay}) — {tag}',
+    'year.option': '{iy} — {tag}',
+    'year.ay': 'Assessment year {ay}',
     'year.name': 'Income year {iy} (AY {ay})',
     'year.tag.filing': 'filing now',
     'year.tag.current': 'this year',
@@ -233,7 +234,8 @@ export const T: Record<Lang, Record<string, string>> = {
     'plan.empty': 'প্রতি মাসে অফিসের কত কর কাটা উচিত তা দেখতে আপনার বেতন লিখুন।',
 
     'year.label': 'আয়বর্ষ',
-    'year.option': '{iy} (করবর্ষ {ay}) — {tag}',
+    'year.option': '{iy} — {tag}',
+    'year.ay': 'করবর্ষ {ay}',
     'year.name': 'আয়বর্ষ {iy} (করবর্ষ {ay})',
     'year.tag.filing': 'এখন রিটার্ন দাখিলের সময়',
     'year.tag.current': 'চলতি বছর',

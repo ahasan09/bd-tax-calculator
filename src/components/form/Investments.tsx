@@ -33,14 +33,14 @@ export function Investments({ calc }: { calc: Calculator }) {
 
   const hint = investmentHint(i18n, result);
   return (
-    <Paper withBorder p="lg">
+    <Paper withBorder p={{ base: 'md', sm: 'lg' }}>
       <Stack gap="md">
         <Title order={2} size="h4">{t('invest.heading')}</Title>
         <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="md" verticalSpacing="md">
           {INVESTMENT_ITEMS.slice(0, COMMON_ITEMS).map(field)}
         </SimpleGrid>
         <div>
-          <Button variant="subtle" size="compact-sm" px={0} onClick={() => setShowMore(s => !s)}
+          <Button variant="subtle" size="sm" px={0} onClick={() => setShowMore(s => !s)}
             aria-expanded={showMore}>
             {showMore ? t('invest.less') : t('invest.more')}
           </Button>

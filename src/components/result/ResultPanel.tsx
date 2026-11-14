@@ -51,7 +51,7 @@ export function ResultPanel({ calc }: { calc: Calculator }) {
   const { t } = useLang().i18n;
   const [tab, setTab] = useState<string | null>('breakdown');
   return (
-    <Paper withBorder p="lg" className="result-panel" style={{ borderTop: '4px solid var(--mantine-color-bdgreen-filled)' }}>
+    <Paper withBorder p={{ base: 'md', sm: 'lg' }} className="result-panel" style={{ borderTop: '4px solid var(--mantine-color-bdgreen-filled)' }}>
       <Stack gap="lg">
         <Tabs value={tab} onChange={setTab} keepMountedMode="display-none">
           <Tabs.List mb="md" className="no-print" aria-label={t('tab.result')}>

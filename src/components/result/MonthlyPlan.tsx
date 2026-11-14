@@ -1,4 +1,4 @@
-import { Box, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { Box, Group, Stack, Text, Title } from '@mantine/core';
 import type { TaxResult } from '../../engine/tax';
 import { useLang } from '../../i18n/context';
 
@@ -52,7 +52,9 @@ export function MonthlyPlan({ result }: { result: TaxResult }) {
       </div>
       {showGrid && (
         <>
-          <SimpleGrid cols={6} spacing={6} verticalSpacing={6}>
+          {/* Columns follow the grid's own width (container query), not the
+              screen's: 3, 4 or 6 — always a whole number of rows for 12 months. */}
+          <div className="plan-wrap"><div className="plan-grid">
             {p.months.map((m, i) => (
               <Box key={i} bg={CELL[m.status].bg} c={CELL[m.status].c} p={6} ta="center" style={{ borderRadius: 6 }}>
                 <Text fz={11} fw={600} lh={1.3}>{month(i)}</Text>
@@ -61,7 +63,7 @@ export function MonthlyPlan({ result }: { result: TaxResult }) {
                 </Text>
               </Box>
             ))}
-          </SimpleGrid>
+          </div></div>
           <Group gap="md">
             {(['deducted', 'planned', 'none'] as const).map(s => (
               <Group key={s} gap={6}>

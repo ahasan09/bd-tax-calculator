@@ -11,7 +11,7 @@ export function MonthlyDeduction({ calc }: { calc: Calculator }) {
   const data = [...MONTHS.map((_, i) => ({ value: String(i), label: month(i) })),
     { value: '12', label: t('monthly.yearOver') }];
   return (
-    <Paper withBorder p="lg">
+    <Paper withBorder p={{ base: 'md', sm: 'lg' }}>
       <Stack gap="md">
         <Title order={2} size="h4">{t('monthly.heading')}</Title>
         <NativeSelect

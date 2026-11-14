@@ -50,6 +50,12 @@ into *Tax breakdown* and *Monthly plan*) and *Return summary* on its own
 page. Printing always includes the breakdown, the plan and the return
 summary, whichever tab is open.
 
+**Responsive:** checked at 320–1920 px (phones, tablets in both
+orientations, desktop) in both languages: no sideways scrolling, no clipped
+text, touch targets at least 36 px. On phones the result total stays pinned
+to the bottom of the screen; the monthly plan grid picks 3, 4 or 6 columns
+from the space it actually has.
+
 **Return summary:** your figures in the order the individual return form
 (IT-11GA 2023) asks for them — income serials 1–11, tax computation 12–19,
 payment 20–26, plus Schedule 1 (salary) and Schedule 5 (rebate), each with

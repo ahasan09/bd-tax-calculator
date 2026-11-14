@@ -68,7 +68,7 @@ export function Breakdown({ result, onShowPlan }: { result: TaxResult; onShowPla
         <Text fw={800} fz={30} className="amt" c={total.refund ? 'teal' : 'bdgreen'}>{total.amount}</Text>
       </Group>
       {hasPlan && (
-        <Anchor component="button" type="button" size="sm" ta="left" onClick={onShowPlan} className="no-print">
+        <Anchor component="button" type="button" size="sm" ta="left" onClick={onShowPlan} className="no-print" py={8} style={{ display: 'block' }}>
           {result.plan.perMonth > 0 ? t('bd.planLink', { amount: money(result.plan.perMonth) }) : t('bd.planLinkPlain')}
         </Anchor>
       )}

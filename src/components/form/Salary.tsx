@@ -24,17 +24,18 @@ function EmployerCard({ calc, employer, index }: { calc: Calculator; employer: E
     <Fieldset legend={many ? t('employer.n', { n: digits(index + 1) }) : t('employer.one')}>
       <Stack gap="sm">
         {employer.periods.map(p => (
-          // Amount, then the month range; on a phone the range wraps under the amount.
-          <Group key={p.id} gap="xs" wrap="wrap" align="center">
+          // One line when there's room; on narrow phones the month range gets
+          // its own full-width line under the amount (see .period-row).
+          <div key={p.id} className="period-row">
             <AmountInput
+              className="period-amount"
               aria-label={t('row.amountAria')}
               placeholder={t('row.amount')}
               leftSection="৳"
               value={p.monthlyAmount}
               onChange={v => actions.updatePeriod(employer.id, p.id, { monthlyAmount: v })}
-              style={{ flex: '1 1 12rem', minWidth: 0 }}
             />
-            <Group gap={6} wrap="nowrap" style={{ flex: '1 1 15rem', minWidth: 0 }}>
+            <Group className="period-months" gap={6} wrap="nowrap">
               <NativeSelect aria-label={t('row.fromAria')} data={months} value={String(p.fromMonth)}
                 style={{ flex: 1, minWidth: 0 }}
                 onChange={e => actions.updatePeriod(employer.id, p.id, { fromMonth: Number(e.currentTarget.value) })} />
@@ -42,15 +43,16 @@ function EmployerCard({ calc, employer, index }: { calc: Calculator; employer: E
               <NativeSelect aria-label={t('row.toAria')} data={months} value={String(p.toMonth)}
                 style={{ flex: 1, minWidth: 0 }}
                 onChange={e => actions.updatePeriod(employer.id, p.id, { toMonth: Number(e.currentTarget.value) })} />
-              <ActionIcon variant="subtle" color="gray" aria-label={t('row.remove')} title={t('row.remove')}
-                onClick={() => actions.removePeriod(employer.id, p.id)}>
-                <CloseIcon />
-              </ActionIcon>
             </Group>
-          </Group>
+            <ActionIcon className="period-remove" variant="subtle" color="gray" size={36}
+              aria-label={t('row.remove')} title={t('row.remove')}
+              onClick={() => actions.removePeriod(employer.id, p.id)}>
+              <CloseIcon />
+            </ActionIcon>
+          </div>
         ))}
         <Group>
-          <Button variant="light" size="xs" onClick={() => actions.addPeriod(employer.id)}>
+          <Button variant="light" size="sm" onClick={() => actions.addPeriod(employer.id)}>
             {t('employer.salaryChange')}
           </Button>
         </Group>
@@ -62,7 +64,7 @@ function EmployerCard({ calc, employer, index }: { calc: Calculator; employer: E
         </SimpleGrid>
         {many && (
           <Group>
-            <Button variant="subtle" color="red" size="xs" onClick={() => actions.removeEmployer(employer.id)}>
+            <Button variant="subtle" color="red" size="sm" onClick={() => actions.removeEmployer(employer.id)}>
               {t('employer.remove')}
             </Button>
           </Group>
@@ -76,11 +78,11 @@ export function Salary({ calc }: { calc: Calculator }) {
   const { i18n } = useLang();
   const warnings = salaryWarnings(i18n, calc.form.employers);
   return (
-    <Paper withBorder p="lg">
+    <Paper withBorder p={{ base: 'md', sm: 'lg' }}>
       <Stack gap="md">
         <Title order={2} size="h4">{i18n.t('salary.heading')}</Title>
         {calc.form.employers.map((e, i) => <EmployerCard key={e.id} calc={calc} employer={e} index={i} />)}
-        <Button variant="default" fullWidth h="auto" py={8} styles={{ label: { whiteSpace: 'normal' } }}
+        <Button variant="default" fullWidth h="auto" mih={40} py={8} styles={{ label: { whiteSpace: 'normal' } }}
           onClick={calc.actions.addEmployer}>{i18n.t('salary.addEmployer')}</Button>
         {warnings.length > 0 && (
           <Alert color="yellow" variant="light" role="status">{warnings.join(' ')}</Alert>

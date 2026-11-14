@@ -23,7 +23,7 @@ function SchemeToggle() {
   const { t } = useLang().i18n;
   const dark = scheme === 'dark';
   return (
-    <ActionIcon variant="default" size="lg" aria-label={t(dark ? 'scheme.light' : 'scheme.dark')}
+    <ActionIcon variant="default" size={40} aria-label={t(dark ? 'scheme.light' : 'scheme.dark')}
       title={t(dark ? 'scheme.light' : 'scheme.dark')} onClick={() => setColorScheme(dark ? 'light' : 'dark')}>
       {dark
         ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
@@ -44,7 +44,7 @@ export function App() {
 
   return (
     <>
-      <Container size="lg" py="lg">
+      <Container size="lg" py="lg" px={{ base: 'xs', sm: 'md' }}>
         <Group justify="space-between" align="flex-start" mb="md" gap="sm" className="app-header">
           <div>
             <Title order={1} size="h2">{t('app.title')}</Title>
@@ -52,6 +52,7 @@ export function App() {
           </div>
           <Group gap="xs" className="no-print">
             <SegmentedControl
+              size="md"
               aria-label={t('lang.switch')}
               value={i18n.lang}
               onChange={v => setLang(v as Lang)}
