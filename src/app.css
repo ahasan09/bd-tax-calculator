@@ -1,0 +1,40 @@
+/* Amounts line up in columns in both scripts. */
+.amt { font-variant-numeric: tabular-nums; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+/* Desktop: the result pane stays in view while the form scrolls, and
+   scrolls inside itself if it is ever taller than the screen. */
+@media (min-width: 62em) {
+  .sticky-result { position: sticky; top: 1rem; max-height: calc(100vh - 2rem); overflow-y: auto; }
+}
+/* Phones: leave room for the fixed total bar. */
+@media (max-width: 61.99em) {
+  body { padding-bottom: 4rem; }
+}
+
+.print-only { display: none; }
+
+/* Print: the breakdown, the monthly plan and the return summary — whatever
+   tab is open — and nothing interactive. */
+@media print {
+  .no-print, .mantine-Tabs-list { display: none !important; }
+  .print-only { display: block; }
+  .mantine-Tabs-panel { display: block !important; }
+  body { padding: 0 !important; margin: 0 !important; background: #fff !important; }
+  .mantine-Container-root { max-width: none !important; padding: 0 !important; }
+  .result-col { flex-basis: 100% !important; max-width: 100% !important; }
+  .sticky-result { position: static; max-height: none; overflow: visible; }
+  .result-panel, .return-panel { border: none !important; padding: 0 !important; }
+  .print-gap { margin-top: 1.25rem; }
+  .print-page { break-before: page; }
+  /* paper is narrower than the on-screen 2-column breakpoint */
+  .return-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; column-gap: 1.5rem !important; }
+  .return-grid .mantine-Table-td { padding-top: 2px; padding-bottom: 2px; }
+  /* compact type on paper so the summary fits one page in both languages */
+  .return-panel, .return-panel .mantine-Table-td, .return-panel .mantine-Text-root { font-size: 10.5px !important; line-height: 1.35 !important; }
+  .return-panel h2 { font-size: 16px !important; }
+}

@@ -1,12 +1,34 @@
-const _results = [];
-function test(name, fn) {
-  try { fn(); _results.push({ name, ok: true }); }
-  catch (e) { _results.push({ name, ok: false, err: e.message }); }
-}
-function assertEqual(actual, expected, label) {
+// Engine, share-link and text tests (ported from the pre-React suite —
+// test bodies unchanged). Run with `npm test`.
+import { test } from 'vitest';
+import * as BDTax from '../src/engine/tax';
+import * as BDState from '../src/engine/state';
+import { T, createI18n, toLatinDigits, type Lang } from '../src/i18n';
+
+function assertEqual(actual: unknown, expected: unknown, label?: string) {
   const a = JSON.stringify(actual), b = JSON.stringify(expected);
   if (a !== b) throw new Error(`${label || 'value'}: expected ${b}, got ${a}`);
 }
+
+// The old suite switched a global language; this adapter keeps that shape.
+let testLang: Lang = 'en';
+
+// Decoded share links in tests are expected to be readable.
+function mustDecode(s: string) {
+  const d = BDState.decode(s);
+  if (!d) throw new Error('share link did not decode');
+  return d;
+}
+const i18n = () => createI18n(testLang);
+const BDI18n = {
+  T, toLatinDigits,
+  setLang: (l: Lang) => { testLang = l; },
+  money: (n: number) => i18n().money(n),
+  pct: (x: number) => i18n().pct(x),
+  month: (i: number) => i18n().month(i),
+  digits: (s: string) => i18n().digits(s),
+  t: (key: string, params?: Record<string, string | number>) => i18n().t(key, params)
+};
 
 // ---- Task 1: formatBDT ----
 test('formatBDT: zero', () => assertEqual(BDTax.formatBDT(0), '৳0'));
@@ -18,7 +40,7 @@ test('formatBDT: negative', () => assertEqual(BDTax.formatBDT(-5000), '-৳5,000
 test('formatBDT: rounds decimals', () => assertEqual(BDTax.formatBDT(1234.6), '৳1,235'));
 
 // ---- Task 1: RULES sanity ----
-const cats = t => [t.general, t.woman, t.senior, t.thirdGender, t.disabled, t.freedomFighter, t.julyWarrior];
+const cats = (t: Record<string, number>) => [t.general, t.woman, t.senior, t.thirdGender, t.disabled, t.freedomFighter, t.julyWarrior];
 test('RULES: five income years, filing year through AY 2030-31', () => {
   assertEqual(BDTax.YEARS, ['2025-26', '2026-27', '2027-28', '2028-29', '2029-30']);
   assertEqual(BDTax.YEARS.map(y => BDTax.RULES[y].assessmentYear),
@@ -40,7 +62,7 @@ test('RULES: same rebate rule every year (3% / 10% / 750k, §78 from AY 2026-27)
     assertEqual(BDTax.RULES[y].rebate, { incomeRate: 0.03, investmentRate: 0.10, cap: 750000 }, y);
 });
 test('RULES: 35% band only from AY 2028-29', () => {
-  const top = y => BDTax.RULES[y].slabs.map(s => s.rate).pop();
+  const top = (y: string) => BDTax.RULES[y].slabs.map(s => s.rate).pop();
   assertEqual(BDTax.YEARS.map(top), [0.30, 0.30, 0.35, 0.35, 0.35]);
 });
 
@@ -157,7 +179,7 @@ test('threshold: freedom fighter / July Warrior category (550,000)', () => {
 });
 
 test('threshold: below threshold is zero for every category', () => {
-  for (const [cat, limit] of [['woman', 450000], ['thirdGender', 525000], ['freedomFighter', 550000]]) {
+  for (const [cat, limit] of [['woman', 450000], ['thirdGender', 525000], ['freedomFighter', 550000]] as [string, number][]) {
     const result = BDTax.calculateTax({ ...base, category: cat, otherIncome: limit - 50000 });
     assertEqual(result.finalTax, 0, cat + ' below threshold');
   }
@@ -319,7 +341,7 @@ test('years: owner spreadsheet sample matches (2026-27)', () => {
 });
 
 test('years: higher threshold lowers tax in AY 2028-29 and 2030-31', () => {
-  const tax = y => BDTax.calculateTax({ ...base, taxYear: y, otherIncome: 1000000 }).grossTax;
+  const tax = (y: string) => BDTax.calculateTax({ ...base, taxYear: y, otherIncome: 1000000 }).grossTax;
   // 1,000,000 − 400k → 300k@10% + 300k@15% = 75,000
   // 1,000,000 − 450k → 300k@10% + 250k@15% = 67,500
   // 1,000,000 − 500k → 300k@10% + 200k@15% = 60,000
@@ -341,8 +363,8 @@ test('years: 2029-30 30% band is 2,63,00,000 so 35% still starts at ৳3 crore',
 });
 
 // Dates built from parts so the local timezone can't shift the month.
-const on = (y, m, d) => new Date(y, m - 1, d);
-const statuses = d => BDTax.YEARS.map(y => BDTax.yearStatus(y, d));
+const on = (y: number, m: number, d: number) => new Date(y, m - 1, d);
+const statuses = (d: Date) => BDTax.YEARS.map(y => BDTax.yearStatus(y, d));
 
 test('years: filing season (Nov 2026) — 2025-26 filing, 2026-27 current', () => {
   assertEqual(statuses(on(2026, 11, 14)), ['filing', 'current', 'planning', 'planning', 'planning']);
@@ -474,7 +496,7 @@ test('employers: overlapping months are both counted', () => {
 
 // ---- itemized investments ----
 test('investments: every year lists the NBR guide items', () => {
-  const keys = y => BDTax.RULES[y].investmentItems.map(i => i.key);
+  const keys = (y: string) => BDTax.RULES[y].investmentItems.map(i => i.key);
   assertEqual(keys('2025-26'), ['providentFund', 'dps', 'govtSecurities', 'lifeInsurance', 'listedShares',
     'funds', 'universalPension', 'pensionFund', 'donations', 'welfareFund', 'other']);
   for (const y of BDTax.YEARS) assertEqual(keys(y), keys('2025-26'), y);
@@ -482,7 +504,7 @@ test('investments: every year lists the NBR guide items', () => {
 
 test('investments: DPS counts up to 1,20,000 and government securities up to 5,00,000', () => {
   const r = BDTax.calculateTax({ ...base, investments: { dps: 150000, govtSecurities: 600000, providentFund: 80000 } });
-  const item = k => r.investmentItems.find(i => i.key === k);
+  const item = (k: string) => r.investmentItems.find(i => i.key === k)!;
   assertEqual([item('dps').allowed, item('dps').capped], [120000, true]);
   assertEqual([item('govtSecurities').allowed, item('govtSecurities').capped], [500000, true]);
   assertEqual([item('providentFund').allowed, item('providentFund').capped], [80000, false]);
@@ -503,7 +525,7 @@ test('investments: blank, negative and unknown entries are ignored', () => {
 
 test('investments: a single total still works (older callers)', () => {
   const r = BDTax.calculateTax({ ...base, investment: 200000 });
-  assertEqual([r.investment, r.investmentItems.find(i => i.key === 'other').allowed], [200000, 200000]);
+  assertEqual([r.investment, r.investmentItems.find(i => i.key === 'other')!.allowed], [200000, 200000]);
 });
 
 // ---- other income by type + tax credits ----
@@ -580,7 +602,7 @@ const formState = { taxYear: '2026-27', category: 'woman', isFirstTimeTaxpayer: 
   advanceTax: '3000', investments: { dps: '60000', govtSecurities: '', other: '' }, nextMonth: 6 };
 
 test('share: round-trip gives the same tax result', () => {
-  const back = BDState.decode(BDState.encode(formState, { keepNextMonth: true }));
+  const back = mustDecode(BDState.encode(formState, { keepNextMonth: true }));
   const a = BDTax.calculateTax(formState), b = BDTax.calculateTax(back);
   assertEqual([b.taxableIncome, b.finalTax, b.tds, b.netPayable, b.plan.perMonth],
     [a.taxableIncome, a.finalTax, a.tds, a.netPayable, a.plan.perMonth]);
@@ -591,12 +613,12 @@ test('share: round-trip gives the same tax result', () => {
 
 test('share: rent and agriculture survive the round-trip', () => {
   const st = { ...formState, otherIncomes: { ...formState.otherIncomes, rent: { amount: '130000' }, agriculture: { amount: '60000' } } };
-  const back = BDState.decode(BDState.encode(st)).otherIncomes;
+  const back = mustDecode(BDState.encode(st)).otherIncomes;
   assertEqual([back.rent.amount, back.agriculture.amount, back.other.amount], [130000, 60000, 5000]);
 });
 
 test('share: next month is left out unless the user chose it', () => {
-  assertEqual(BDState.decode(BDState.encode(formState)).nextMonth, undefined);
+  assertEqual(mustDecode(BDState.encode(formState)).nextMonth, undefined);
 });
 
 test('share: link is URL-safe and short', () => {
@@ -615,7 +637,7 @@ test('share: hostile values are dropped, not passed through', () => {
     e: [{ p: [['<img src=x>', 0, 11], [5000, -1, 99], [5000, 2, 'x']], b: 'abc', t: -50 }],
     o: { bi: ['1e3', '<b>'] }, a: Infinity, i: { dps: 1000, evil: 5 }, n: 40 };
   const s = btoa(JSON.stringify(raw)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  const d = BDState.decode(s);
+  const d = mustDecode(s);
   assertEqual([d.taxYear, d.category, d.disabledDependents, d.advanceTax, d.nextMonth],
     [undefined, 'general', 20, 0, undefined]);
   assertEqual(d.employers[0].salaryPeriods, [{ monthlyAmount: 0, fromMonth: 0, toMonth: 11 }], 'bad rows dropped');
@@ -629,7 +651,7 @@ const exampleKa = { ...base, category: 'woman',
   employers: [{ salaryPeriods: [{ monthlyAmount: 99000, fromMonth: 0, toMonth: 11 }], bonus: 105000, tds: 36000 }],
   otherIncomes: { bankInterest: { amount: 110000, tds: 11000 }, rent: { amount: 130000 }, agriculture: { amount: 60000 } },
   investments: { govtSecurities: 250000, lifeInsurance: 60000 } };
-const serials = rows => Object.fromEntries(rows.map(r => [r.serial, r.amount]));
+const serials = (rows: BDTax.ReturnRow[]) => Object.fromEntries(rows.map(r => [r.serial, r.amount]));
 
 test('return: NBR example ক fills the IT-11GA serials', () => {
   const s = BDTax.returnSummary(BDTax.calculateTax(exampleKa));
@@ -664,7 +686,7 @@ test('i18n: every key exists in both languages', () => {
 });
 
 test('i18n: both languages use the same {placeholders}', () => {
-  const holes = s => (s.match(/\{\w+\}/g) || []).sort().join(' ');
+  const holes = (s: string) => (s.match(/\{\w+\}/g) || []).sort().join(' ');
   const bad = Object.keys(BDI18n.T.en).filter(k => holes(BDI18n.T.en[k]) !== holes(BDI18n.T.bn[k]));
   assertEqual(bad, []);
 });
@@ -692,23 +714,3 @@ test('i18n: typed Bangla digits, commas and spaces read as numbers', () => {
   const r = BDTax.calculateTax({ ...base, otherIncome: BDI18n.toLatinDigits('৫,০০,০০০') });
   assertEqual(r.taxableIncome, 500000);
 });
-
-if (typeof document !== 'undefined') {
-  // ---- render ----
-  const ul = document.getElementById('results');
-  let passed = 0;
-  for (const r of _results) {
-    const li = document.createElement('li');
-    li.className = r.ok ? 'pass' : 'fail';
-    li.textContent = (r.ok ? '✓ ' : '✗ ') + r.name + (r.ok ? '' : ' — ' + r.err);
-    ul.appendChild(li);
-    if (r.ok) passed++;
-  }
-  document.getElementById('summary').textContent =
-    `${passed}/${_results.length} passing` + (passed === _results.length ? ' — ALL GREEN' : ' — FAILURES');
-  document.title = (passed === _results.length ? '✓ ' : '✗ ') + document.title;
-}
-
-if (typeof window === 'undefined') {
-  globalThis.__results = _results;
-}

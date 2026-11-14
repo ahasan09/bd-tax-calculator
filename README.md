@@ -3,7 +3,9 @@
 **Live site: https://ahasan09.github.io/bd-tax-calculator/**
 
 Live, in-browser income tax calculator for salaried people in Bangladesh.
-No backend, no database, nothing stored — open `index.html` and type.
+No backend, no database, nothing stored — everything calculates as you type.
+Built with React, TypeScript and [Mantine](https://mantine.dev), with light
+and dark themes.
 
 **Tax years:** income years 2025-26 to 2029-30 (assessment years 2026-27
 to 2030-31), all set by the **Finance Act 2026** as explained in NBR's
@@ -40,8 +42,8 @@ month names, the return summary uses the form's own Bangla wording, and
 amounts can be typed with Bangla or Latin digits. The choice is remembered
 in your browser (Bangla is the default on a Bangla-language system). Bangla
 uses the device's own fonts, so no web-font request leaves the page. All
-text lives in `i18n.js`; the tests check both languages have every key with
-the same placeholders.
+text lives in `src/i18n/text.ts`; the tests check both languages have every
+key with the same placeholders.
 
 **Layout:** two tabs — *Calculator* (the form, with the result pane split
 into *Tax breakdown* and *Monthly plan*) and *Return summary* on its own
@@ -58,28 +60,43 @@ after `#`, which browsers never send to a server — the link itself is the
 only copy. Anyone you give it to sees your figures. Links are validated when
 opened, so an edited or broken link can't inject anything into the page.
 
-## Run
+## Develop
 
-Use the live site above, or open `index.html` in any browser. No build, no
-dependencies.
+Needs Node.js 24 (LTS).
 
-## Deploy
+```bash
+npm install
+npm run dev        # local dev server with hot reload
+npm test           # engine, share-link, text and form tests (Vitest)
+npm run build      # type-check, then build the static site into dist/
+npm run preview    # serve dist/ locally
+```
 
-Every push to `main` runs `.github/workflows/pages.yml`: the engine tests
-must pass, then only the calculator (`index.html` and its four scripts) is
-published to GitHub Pages — tests and docs stay off the site.
+## Project layout
+
+| Path | What it holds |
+|---|---|
+| `src/engine/tax.ts` | The tax engine — rates per year (`RULES`), `calculateTax`, `returnSummary`. Pure functions, no React. |
+| `src/engine/state.ts` | Share-link encode / decode (validates every field of an incoming link). |
+| `src/i18n/` | English and Bangla text, Bangla digits, the language context. |
+| `src/state/` | Form state and the `useCalculator` hook that turns it into a result. |
+| `src/components/` | The Mantine UI: form sections, result panel, return summary. |
+| `tests/` | Vitest suites. |
 
 ## Test
 
-The suite includes golden cases taken from the worked examples in NBR's
-*Aykor Nirdeshika 2026-27* (pp. 56–57, 90–94).
+`npm test` runs 100+ cases, including golden cases taken from the worked
+examples in NBR's *Aykor Nirdeshika 2026-27* (pp. 56–57, 90–94).
 
-Open `tests.html` in a browser — the scenarios run automatically and show
-green/red per test. Or run headless: `node run-tests.mjs`.
+## Deploy
+
+Every push to `main` runs `.github/workflows/pages.yml`: install, tests,
+type-check and build must pass, then only the built site (`dist/`) is
+published to GitHub Pages — source, tests and docs stay off the site.
 
 ## Updating for a new tax year
 
-All year-specific numbers live in the `RULES` map at the top of `tax.js`.
+All year-specific numbers live in the `RULES` map in `src/engine/tax.ts`.
 Add one `year(...)` entry; the year picker builds itself from `RULES`.
 
 ## Disclaimer

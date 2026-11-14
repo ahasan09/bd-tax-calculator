@@ -1,5 +1,5 @@
-# Publish only the calculator to GitHub Pages — tests, docs and other repo
-# files stay out of the site. The engine tests must pass before deploying.
+# Build the React app and publish only the build output (dist/) to GitHub
+# Pages. Type-checking and tests must pass before anything is deployed.
 name: Deploy calculator to Pages
 
 on:
@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Test, then package only the calculator files.
+  # Install, type-check, test, build.
   build:
     runs-on: ubuntu-latest
     steps:
@@ -26,25 +26,22 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
+          cache: npm
 
-      - name: Run engine tests
-        run: node run-tests.mjs
+      - name: Install
+        run: npm ci
 
-      - name: Collect the calculator files
-        run: |
-          mkdir _site
-          cp index.html tax.js state.js i18n.js app.js _site/
-          # Fail if the page loads a script that wasn't copied.
-          for f in $(grep -o 'src="[^"]*"' index.html | sed 's/src="//; s/"$//'); do
-            test -f "_site/$f" || { echo "missing $f"; exit 1; }
-          done
-          ls -la _site
+      - name: Test
+        run: npm test
+
+      - name: Type-check and build
+        run: npm run build
 
       - uses: actions/configure-pages@v6
 
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: _site
+          path: dist
 
   # A separate job, as in GitHub's own Pages template — the uploaded
   # artifact is reliably visible by the time this starts.
