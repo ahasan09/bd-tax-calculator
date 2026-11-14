@@ -6,57 +6,84 @@ const BDTax = (() => {
   // Fiscal-year month order; index 0 = July … 11 = June.
   const MONTHS = ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
 
-  // Shared between the two supported years (Finance Ordinance 2025 legislated
-  // both; the Finance Bill 2026 rebate rule is applied to both years).
-  const THRESHOLDS = {
-    general: 375000,
-    woman: 425000,
-    senior: 425000,
-    thirdGender: 500000,
-    disabled: 500000,
-    freedomFighter: 525000,
-    julyWarrior: 525000
-  };
-  const SLABS = [
+  // Source for every figure below: Finance Act 2026, Schedule 2, as explained
+  // in NBR's Income Tax Paripatra 2026-27 (§1.1–1.3 rates, §32 rebate). The
+  // Act states rates per ASSESSMENT year; keys here are INCOME years
+  // (income year Y-(Y+1) is assessed in AY (Y+1)-(Y+2)).
+  const SOURCE = 'Finance Act 2026 · NBR Income Tax Paripatra 2026-27';
+
+  // Tax-free thresholds: general, woman & 65+, third gender & disability,
+  // war-wounded freedom fighter & July Warrior.
+  function thresholds(general, womanSenior, thirdGenderDisabled, freedomFighterJuly) {
+    return {
+      general,
+      woman: womanSenior,
+      senior: womanSenior,
+      thirdGender: thirdGenderDisabled,
+      disabled: thirdGenderDisabled,
+      freedomFighter: freedomFighterJuly,
+      julyWarrior: freedomFighterJuly
+    };
+  }
+
+  // Bands above the threshold. From AY 2028-29 a 30% band of fixed size is
+  // followed by 35% — sized so 35% starts at ৳3 crore of total income.
+  const BASE_BANDS = [
     { size: 300000, rate: 0.10 },
     { size: 400000, rate: 0.15 },
     { size: 500000, rate: 0.20 },
-    { size: 2000000, rate: 0.25 },
-    { size: Infinity, rate: 0.30 }
+    { size: 2000000, rate: 0.25 }
   ];
-  const SALARY_EXEMPTION = { fraction: 1 / 3, cap: 500000 };
-  const MINIMUM_TAX = { regular: 5000, firstTime: 1000 };
-  const DEPENDENT_BONUS = 50000;
-  // Finance Bill 2026 rebate rule, currently applied to both years.
-  const REBATE = { incomeRate: 0.03, investmentRate: 0.10, cap: 750000 };
+  const slabs = thirtyBand => thirtyBand === Infinity
+    ? [...BASE_BANDS, { size: Infinity, rate: 0.30 }]
+    : [...BASE_BANDS, { size: thirtyBand, rate: 0.30 }, { size: Infinity, rate: 0.35 }];
+
+  const COMMON = {
+    source: SOURCE,
+    dependentBonus: 50000,                                // per disabled child/ward
+    salaryExemption: { fraction: 1 / 3, cap: 500000 },    // ITA 2023 — unchanged
+    minimumTax: { regular: 5000, firstTime: 1000 },
+    rebate: { incomeRate: 0.03, investmentRate: 0.10, cap: 750000 }  // §78, from AY 2026-27
+  };
+
+  function year(incomeYear, assessmentYear, t, thirtyBand) {
+    return { ...COMMON, label: `Income year ${incomeYear} (AY ${assessmentYear})`,
+      incomeYear, assessmentYear, thresholds: t, slabs: slabs(thirtyBand) };
+  }
 
   const RULES = {
-    '2025-26': {
-      label: 'Income year 2025-26 (AY 2026-27)',
-      basis: 'Finance Ordinance 2025',
-      thresholds: THRESHOLDS,
-      dependentBonus: DEPENDENT_BONUS,
-      slabs: SLABS,
-      salaryExemption: SALARY_EXEMPTION,
-      // Owner's decision (2026-07-11): apply the Finance Bill 2026 rebate
-      // to this year too. §78 ITA 2023 as consolidated on bdlaws reads
-      // 15% / 1,000,000 for this filing year — replace REBATE with those
-      // numbers here to revert. `note` is surfaced in the page footer.
-      rebate: REBATE,
-      note: 'Investment rebate applied at the Finance Bill 2026 rate (10%, max ৳7,50,000)',
-      minimumTax: MINIMUM_TAX
-    },
-    '2026-27': {
-      label: 'Income year 2026-27 (AY 2027-28)',
-      basis: 'Finance Bill 2026',
-      thresholds: THRESHOLDS,
-      dependentBonus: DEPENDENT_BONUS,
-      slabs: SLABS,
-      salaryExemption: SALARY_EXEMPTION,
-      rebate: REBATE,
-      minimumTax: MINIMUM_TAX
-    }
+    '2025-26': year('2025-26', '2026-27', thresholds(400000, 450000, 525000, 550000), Infinity),
+    '2026-27': year('2026-27', '2027-28', thresholds(400000, 450000, 525000, 550000), Infinity),
+    '2027-28': year('2027-28', '2028-29', thresholds(450000, 500000, 575000, 600000), 26350000),
+    '2028-29': year('2028-29', '2029-30', thresholds(450000, 500000, 575000, 600000), 26350000),
+    '2029-30': year('2029-30', '2030-31', thresholds(500000, 550000, 625000, 650000), 26300000)
   };
+  const YEARS = Object.keys(RULES).sort();
+
+  // ---- which year is which, relative to a date ----
+  // Income year Y-(Y+1) runs July Y – June Y+1; its return is filed
+  // July–November of Y+1.
+  const startOf = key => parseInt(key, 10);
+  const currentStart = date => date.getMonth() >= 6 ? date.getFullYear() : date.getFullYear() - 1;
+  const inFilingSeason = date => date.getMonth() >= 6 && date.getMonth() <= 10;
+
+  // 'filing' | 'current' | 'planning' | 'past'
+  function yearStatus(key, date = new Date()) {
+    const s = startOf(key), cur = currentStart(date);
+    if (s === cur) return 'current';
+    if (s > cur) return 'planning';
+    return s === cur - 1 && inFilingSeason(date) ? 'filing' : 'past';
+  }
+
+  // The year a visitor most likely wants: the filing year during filing
+  // season, else the running year, else the nearest year we have rules for.
+  function defaultYear(date = new Date()) {
+    const filing = YEARS.find(k => yearStatus(k, date) === 'filing');
+    if (filing) return filing;
+    const current = YEARS.find(k => yearStatus(k, date) === 'current');
+    if (current) return current;
+    return startOf(YEARS[0]) > currentStart(date) ? YEARS[0] : YEARS[YEARS.length - 1];
+  }
 
   // ৳12,34,567 — last three digits, then groups of two.
   function formatBDT(n) {
@@ -78,7 +105,7 @@ const BDTax = (() => {
   }
 
   function calculateTax(inputs) {
-    const rules = RULES[inputs.taxYear] || RULES['2025-26'];
+    const rules = RULES[inputs.taxYear] || RULES[defaultYear()];
 
     const validPeriods = (inputs.salaryPeriods || [])
       .filter(p => Number(p.toMonth) >= Number(p.fromMonth));
@@ -163,5 +190,5 @@ const BDTax = (() => {
       refundable: Math.max(tds - finalTax, 0) };
   }
 
-  return { RULES, MONTHS, formatBDT, calculateTax };
+  return { RULES, YEARS, MONTHS, formatBDT, calculateTax, yearStatus, defaultYear };
 })();

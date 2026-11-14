@@ -223,3 +223,25 @@ unified rebate rule (10%/৳7.5 lakh, both years), minimum-tax floor
 - Plain HTML/CSS/JS, no framework, no build
 - English UI with explanatory hints; ৳ and Bangladeshi digit grouping
 - Layout = form + sticky live breakdown pane (the trace is the teaching tool)
+
+## Update 2026-11-14 — multi-year rules
+
+The rules above were written from the Finance Bill 2026. As passed, the
+**Finance Act 2026** (NBR Income Tax Paripatra 2026-27, §1.1–1.3 and §32)
+sets rates per *assessment* year from AY 2026-27, so they also cover
+income year 2025-26:
+
+| Income year (AY) | General | Woman / 65+ | Third gender / disability | Freedom fighter / July Warrior | Bands above threshold |
+|---|---|---|---|---|---|
+| 2025-26, 2026-27 (AY 2026-27, 2027-28) | 400,000 | 450,000 | 525,000 | 550,000 | 3L@10, 4L@15, 5L@20, 20L@25, rest@30 |
+| 2027-28, 2028-29 (AY 2028-29, 2029-30) | 450,000 | 500,000 | 575,000 | 600,000 | … 20L@25, next 2,63,50,000@30, rest@35 |
+| 2029-30 (AY 2030-31) | 500,000 | 550,000 | 625,000 | 650,000 | … 20L@25, next 2,63,00,000@30, rest@35 |
+
+Unchanged in every year: +50,000 per disabled dependent; minimum tax
+5,000 / first-time 1,000; ⅓ salary exemption capped at 500,000. The §78
+rebate (3% / 10% / 7,50,000) applies from AY 2026-27, so the earlier
+"owner's decision" to apply it to 2025-26 is now simply the law.
+
+The year toggle is replaced by a select built from `RULES`, labelled
+filing / this year / planning / past from today's date; the default is
+the filing year in July–November, otherwise the running year.

@@ -3,14 +3,21 @@
 Live, in-browser income tax calculator for salaried people in Bangladesh.
 No backend, no database, nothing stored — open `index.html` and type.
 
-**Use it for:**
-- Income year **2025-26** (AY 2026-27) — the return filed Jul–Nov 2026,
-  per the Finance Ordinance 2025
-- Income year **2026-27** (AY 2027-28) — the running year, per the
-  Finance Bill 2026
+**Tax years:** income years 2025-26 to 2029-30 (assessment years 2026-27
+to 2030-31), all set by the **Finance Act 2026** as explained in NBR's
+Income Tax Paripatra 2026-27. The page opens on the year you most likely
+want: the filing year during filing season (July–November), otherwise the
+running year. Later years are marked "planning", since a future budget may
+still change them.
 
-Both years use the Finance Bill 2026 investment rebate: lowest of 3% of
-taxable income, 10% of eligible investment, or ৳7,50,000.
+| Income year | General tax-free limit | Top rate |
+|---|---|---|
+| 2025-26, 2026-27 | ৳4,00,000 | 30% |
+| 2027-28, 2028-29 | ৳4,50,000 | 35% above ৳3 crore |
+| 2029-30 | ৳5,00,000 | 35% above ৳3 crore |
+
+Investment rebate, every year: lowest of 3% of taxable income, 10% of
+eligible investment, or ৳7,50,000.
 
 **Features:** all official taxpayer categories, mid-year salary changes via
 month-range rows, bonus / other income / investment / TDS, minimum-tax and
@@ -29,7 +36,7 @@ green/red per test. Or run headless: `node run-tests.mjs`.
 ## Updating for a new tax year
 
 All year-specific numbers live in the `RULES` map at the top of `tax.js`.
-Add a new entry (and a radio button in `index.html`) — nothing else changes.
+Add one `year(...)` entry; the year picker builds itself from `RULES`.
 
 ## Disclaimer
 

@@ -95,13 +95,10 @@
 </header>
 <main>
   <form class="panel" id="form" autocomplete="off">
-    <fieldset>
-      <legend>Tax year</legend>
-      <label class="inline"><input type="radio" name="taxYear" value="2025-26" checked>
-        2025-26 — return filing now (Jul–Nov 2026)</label>
-      <label class="inline"><input type="radio" name="taxYear" value="2026-27">
-        2026-27 — current year (planning)</label>
-    </fieldset>
+    <label class="field">Tax year
+      <select id="taxYear"></select>
+      <span class="hint" id="yearHint"></span>
+    </label>
 
     <label class="field">Taxpayer category
       <select id="category">

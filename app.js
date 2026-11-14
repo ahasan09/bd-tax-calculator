@@ -56,10 +56,27 @@
     return msgs.join(' ');
   }
 
+  // ---- tax year picker, built from the engine's RULES ----
+  const YEAR_STATUS = {
+    filing: { tag: 'filing now', hint: 'Return for this year is filed July–November.' },
+    current: { tag: 'this year', hint: 'The year running now — use it to plan your monthly deduction.' },
+    planning: { tag: 'planning', hint: 'Rates already set by Finance Act 2026 — a future budget may still change them.' },
+    past: { tag: 'past', hint: 'Filing season for this year has ended.' }
+  };
+
+  function fillYears() {
+    const sel = $('taxYear');
+    sel.innerHTML = BDTax.YEARS.map(y => {
+      const r = BDTax.RULES[y];
+      return `<option value="${y}">${r.incomeYear} (AY ${r.assessmentYear}) — ${YEAR_STATUS[BDTax.yearStatus(y)].tag}</option>`;
+    }).join('');
+    sel.value = BDTax.defaultYear();
+  }
+
   // ---- read form → engine input ----
   function readInputs() {
     return {
-      taxYear: document.querySelector('input[name="taxYear"]:checked').value,
+      taxYear: $('taxYear').value,
       category: $('category').value,
       isFirstTimeTaxpayer: $('firstTime').checked,
       disabledDependents: $('dependents').value,
@@ -164,8 +181,8 @@
     bar.classList.toggle('refund', total.refund);
     bar.querySelector('.lbl').textContent = total.shortLabel;
     bar.querySelector('.amt').textContent = total.amount;
-    $('footerBasis').textContent = `${result.rules.label} rules per ${result.rules.basis}. ` +
-      (result.rules.note ? `${result.rules.note}. ` : '');
+    $('yearHint').textContent = YEAR_STATUS[BDTax.yearStatus(inputs.taxYear)].hint;
+    $('footerBasis').textContent = `${result.rules.label} rules per ${result.rules.source}.`;
   }
 
   $('addRow').addEventListener('click', () => { addRow(); recalc(); });
@@ -178,6 +195,7 @@
     }, { threshold: 0.15 }).observe($('breakdown'));
   }
 
+  fillYears();    // year picker, defaulting to the year most people want today
   addRow();       // start with one full-year row
   recalc();       // initial render (all zeros)
 })();
