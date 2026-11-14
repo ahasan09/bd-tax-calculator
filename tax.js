@@ -56,6 +56,9 @@ const BDTax = (() => {
     { key: 'other', label: 'Other eligible investment' }
   ];
 
+  // Kinds of non-salary income the form asks for, in display order.
+  const OTHER_INCOME_KEYS = ['bankInterest', 'savingsInterest', 'other'];
+
   const COMMON = {
     source: SOURCE,
     investmentItems: INVESTMENT_ITEMS,
@@ -150,7 +153,16 @@ const BDTax = (() => {
     const grossSalary = salaryFromPeriods + bonus;
     const exemption = Math.round(
       Math.min(grossSalary * rules.salaryExemption.fraction, rules.salaryExemption.cap));
-    const otherIncome = Math.round(toNonNegativeAmount(inputs.otherIncome));
+    // Non-salary income by source, each with any tax deducted at source on it.
+    // Interest (bank and savings certificates) is taxed in the normal slabs
+    // and its TDS is a credit — NBR Aykor Nirdeshika 2026-27, examples ক/খ.
+    // Older callers pass one `otherIncome` total, treated as "other".
+    const enteredOther = inputs.otherIncomes || { other: { amount: inputs.otherIncome } };
+    const otherIncomeItems = OTHER_INCOME_KEYS.map(key => {
+      const e = enteredOther[key] || {};
+      return { key, amount: Math.round(toNonNegativeAmount(e.amount)), tds: Math.round(toNonNegativeAmount(e.tds)) };
+    });
+    const otherIncome = otherIncomeItems.reduce((s, i) => s + i.amount, 0);
     const taxableIncome = grossSalary - exemption + otherIncome;
 
     const threshold = (rules.thresholds[inputs.category] || rules.thresholds.general)
@@ -211,7 +223,12 @@ const BDTax = (() => {
         };
       }
     }
-    const tds = sum('tds');
+    // Every tax already paid this year counts against the bill: employers'
+    // TDS, TDS on other income, and advance tax.
+    const employerTds = sum('tds');
+    const sourceTds = otherIncomeItems.reduce((s, i) => s + i.tds, 0);
+    const advanceTax = Math.round(toNonNegativeAmount(inputs.advanceTax));
+    const tds = employerTds + sourceTds + advanceTax;
     // Months 0..11 in which any salary is paid — an employer can only deduct then.
     const salaryMonths = MONTHS.map((_, m) => validPeriods.some(p =>
       toNonNegativeAmount(p.monthlyAmount) > 0 && m >= Number(p.fromMonth) && m <= Number(p.toMonth)));
@@ -228,7 +245,8 @@ const BDTax = (() => {
       monthlyTdsIfMaxInvested: planDeductions(taxIfMaxInvested, tds, salaryMonths, nextMonth).perMonth
     };
 
-    return { rules, salaryFromPeriods, bonus, grossSalary, exemption, otherIncome,
+    return { rules, salaryFromPeriods, bonus, grossSalary, exemption, otherIncome, otherIncomeItems,
+      employerTds, sourceTds, advanceTax,
       taxableIncome, threshold, slabs, grossTax,
       investmentItems, investmentEntered, investment, rebateBreakdown, rebate, taxAfterRebate, minimumTax, minimumApplied, finalTax,
       plan, investmentAdvice, tds,

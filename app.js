@@ -136,7 +136,12 @@
       isFirstTimeTaxpayer: $('firstTime').checked,
       disabledDependents: $('dependents').value,
       employers: readEmployers(),
-      otherIncome: $('otherIncome').value,
+      otherIncomes: {
+        bankInterest: { amount: $('bankInterest').value, tds: $('bankTds').value },
+        savingsInterest: { amount: $('savingsInterest').value, tds: $('savingsTds').value },
+        other: { amount: $('otherIncome').value }
+      },
+      advanceTax: $('advanceTax').value,
       investments: readInvestments(),
       nextMonth: Number($('nextMonth').value)
     };
@@ -194,6 +199,10 @@
       `or ${fmt(rb.cap)}`;
   }
 
+  const OTHER_INCOME_LABELS = {
+    bankInterest: 'Bank interest', savingsInterest: 'Savings certificate profit', other: 'Other income'
+  };
+
   function line(lbl, amt, sub) {
     return `<div class="bd-line"><span class="lbl">${lbl}${sub ? `<small>${sub}</small>` : ''}</span>
             <span class="amt">${amt}</span></div>`;
@@ -208,7 +217,9 @@
       result.bonus > 0 ? `includes ${fmt(result.bonus)} bonus` : ''].filter(Boolean).join('; '));
     h += line('− Tax-free part of salary', fmt(result.exemption),
       '⅓ of salary is tax-free (max ৳5,00,000)' + (many ? ' — once, on all jobs combined' : ''));
-    if (result.otherIncome > 0) h += line('+ Other income', fmt(result.otherIncome), '');
+    for (const item of result.otherIncomeItems) {
+      if (item.amount > 0) h += line(`+ ${OTHER_INCOME_LABELS[item.key]}`, fmt(item.amount), '');
+    }
     h += `<div class="bd-rule"></div>`;
     h += line('<b>Taxable income</b>', `<b>${fmt(result.taxableIncome)}</b>`, '');
     h += `<div class="bd-rule"></div>`;
@@ -221,7 +232,10 @@
       `lowest of ${rebateCandidatesText(result)}`);
     h += line('<b>Annual tax</b>', `<b>${fmt(result.finalTax)}</b>`, result.minimumApplied
       ? `minimum tax — income above the tax-free limit pays at least ${fmt(result.minimumTax)}` : '');
-    if (result.tds > 0) h += line('− Deducted so far (TDS)', fmt(result.tds), many ? perEmployer('tds') : '');
+    if (result.employerTds > 0) h += line(`− Deducted by ${many ? 'employers' : 'your office'} (TDS)`,
+      fmt(result.employerTds), many ? perEmployer('tds') : '');
+    if (result.sourceTds > 0) h += line('− Tax deducted on interest', fmt(result.sourceTds), '');
+    if (result.advanceTax > 0) h += line('− Advance tax paid', fmt(result.advanceTax), '');
     h += `<div class="bd-tear"></div>`;
     const total = totalView(result);
     h += `<div class="bd-total${total.refund ? ' refund' : ''}">` +
@@ -247,7 +261,7 @@
       head: `Your ${many ? 'current ' : ''}office should deduct <span class="amt">${fmt(p.perMonth)}</span> per month` +
         (p.monthsLeft < 12 ? `, ${span}` : ''),
       sub: result.tds > 0
-        ? `(${fmt(result.finalTax)} annual tax − ${fmt(result.tds)} already deducted${many ? ' by all employers' : ''}) ÷ ${p.monthsLeft} salary months left`
+        ? `(${fmt(result.finalTax)} annual tax − ${fmt(result.tds)} already ${result.tds > result.employerTds ? 'deducted or paid' : 'deducted'}${many && result.tds === result.employerTds ? ' by all employers' : ''}) ÷ ${p.monthsLeft} salary months left`
         : `${fmt(result.finalTax)} annual tax ÷ ${p.monthsLeft} salary months`
     };
   }

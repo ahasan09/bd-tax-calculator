@@ -506,6 +506,69 @@ test('investments: a single total still works (older callers)', () => {
   assertEqual([r.investment, r.investmentItems.find(i => i.key === 'other').allowed], [200000, 200000]);
 });
 
+// ---- other income by type + tax credits ----
+test('other income: interest is taxed in the slabs; its TDS is a credit', () => {
+  const r = BDTax.calculateTax({ ...base, otherIncomes: {
+    bankInterest: { amount: 350000, tds: 35000 }, savingsInterest: { amount: 300000, tds: 30000 } } });
+  assertEqual([r.otherIncome, r.sourceTds, r.tds], [650000, 65000, 65000]);
+  assertEqual(r.otherIncomeItems.map(i => [i.key, i.amount, i.tds]),
+    [['bankInterest', 350000, 35000], ['savingsInterest', 300000, 30000], ['other', 0, 0]]);
+});
+
+test('other income: advance tax and every TDS reduce what is still owed', () => {
+  // income 1,000,000 → tax 75,000; credits 20,000 employer + 5,000 bank + 25,000 advance
+  const r = BDTax.calculateTax({ ...base, advanceTax: 25000,
+    employers: [{ salaryPeriods: [{ monthlyAmount: 100000, fromMonth: 0, toMonth: 11 }], tds: 20000 }],
+    otherIncomes: { bankInterest: { amount: 200000, tds: 5000 } } });
+  assertEqual([r.taxableIncome, r.finalTax], [1000000, 75000]);
+  assertEqual([r.employerTds, r.sourceTds, r.advanceTax, r.tds, r.netPayable], [20000, 5000, 25000, 50000, 25000]);
+  assertEqual(r.plan.remaining, 25000, 'planner subtracts all credits');
+});
+
+test('other income: a single total still works (older callers)', () => {
+  const r = BDTax.calculateTax({ ...base, otherIncome: 100000 });
+  assertEqual([r.otherIncome, r.sourceTds], [100000, 0]);
+});
+
+// ---- golden cases: NBR Aykor Nirdeshika 2026-27 worked examples (AY 2026-27) ----
+test('NBR p.56: man with ৳50,00,000 total income → ৳11,10,000', () => {
+  assertEqual(BDTax.calculateTax({ ...base, otherIncome: 5000000 }).grossTax, 1110000);
+});
+
+test('NBR p.56: woman with ৳50,00,000 total income → ৳10,95,000', () => {
+  assertEqual(BDTax.calculateTax({ ...base, category: 'woman', otherIncome: 5000000 }).grossTax, 1095000);
+});
+
+test('NBR example 17: parents of two disabled children', () => {
+  const father = BDTax.calculateTax({ ...base, disabledDependents: 2, otherIncome: 600000 });
+  const mother = BDTax.calculateTax({ ...base, category: 'woman', disabledDependents: 2, otherIncome: 700000 });
+  assertEqual([father.threshold, father.finalTax, mother.threshold, mother.finalTax], [500000, 10000, 550000, 15000]);
+});
+
+test('NBR example ক: private-sector employee (woman), rebate and credits', () => {
+  // monthly 52,500 basic + 5,000 medical + 1,500 entertainment + 25,000 house rent
+  // + 15,000 car benefit = 99,000; bonus 1,05,000; rent 1,30,000 + agriculture 60,000;
+  // bank interest 1,10,000 (TDS 11,000); salary TDS 36,000; invest 2,50,000 + 60,000
+  const r = BDTax.calculateTax({ ...base, category: 'woman',
+    employers: [{ salaryPeriods: [{ monthlyAmount: 99000, fromMonth: 0, toMonth: 11 }], bonus: 105000, tds: 36000 }],
+    otherIncomes: { bankInterest: { amount: 110000, tds: 11000 }, other: { amount: 190000 } },
+    investments: { govtSecurities: 250000, lifeInsurance: 60000 } });
+  assertEqual([r.grossSalary, r.exemption, r.taxableIncome], [1293000, 431000, 1162000]);
+  assertEqual([r.grossTax, r.rebateBreakdown.byIncome, r.rebate, r.finalTax], [92400, 34860, 31000, 61400]);
+  // The guide prints 14,800 here, but 61,400 − 11,000 − 36,000 = 14,400
+  // (arithmetic slip in the guide; every step before it matches).
+  assertEqual(r.netPayable, 14400, 'before net-wealth surcharge');
+});
+
+test('NBR example খ: savings-certificate and bank interest (regular income part)', () => {
+  // employment 9,15,000; savings-certificate profit 3,00,000 (TDS 30,000);
+  // bank interest 3,50,000 (TDS 35,000); salary TDS 36,000. (Capital gain excluded.)
+  const r = BDTax.calculateTax({ ...base,
+    employers: [{ salaryPeriods: [{ monthlyAmount: 76250, fromMonth: 0, toMonth: 11 }], tds: 36000 }],
+    otherIncomes: { savingsInterest: { amount: 300000, tds: 30000 }, bankInterest: { amount: 350000, tds: 35000 } } });
+  assertEqual([r.grossSalary, r.taxableIncome, r.grossTax, r.tds], [915000, 1260000, 122000, 101000]);
+});
+
 if (typeof document !== 'undefined') {
   // ---- render ----
   const ul = document.getElementById('results');

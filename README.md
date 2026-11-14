@@ -22,7 +22,9 @@ eligible investment, or ৳7,50,000.
 **Features:** all official taxpayer categories, mid-year salary changes via
 month-range rows, **several employers in one year** (job change — salaries
 are pooled so the ৳5 lakh exemption cap applies once), bonus and TDS per
-employer, other income, **itemized investments** (provident fund — yours
+employer, **other income by source** (bank interest and savings-certificate
+profit taxed at normal rates, with the tax deducted on them and any advance
+tax credited), **itemized investments** (provident fund — yours
 and your employer's — DPS up to ৳1,20,000, savings certificates up to
 ৳5,00,000, insurance, shares, funds, pension, donations; limits per NBR's
 Aykor Nirdeshika 2026-27), minimum-tax and
@@ -36,6 +38,9 @@ left in the year (mid-year joiners and "pay with return" cases included).
 Open `index.html` in any browser. No build, no dependencies.
 
 ## Test
+
+The suite includes golden cases taken from the worked examples in NBR's
+*Aykor Nirdeshika 2026-27* (pp. 56–57, 90–94).
 
 Open `tests.html` in a browser — the scenarios run automatically and show
 green/red per test. Or run headless: `node run-tests.mjs`.

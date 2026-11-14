@@ -52,6 +52,9 @@
     font-size: 0.85rem; padding: 0.3rem 0; }
   .warn { color: var(--warn); font-size: 0.85rem; min-height: 1.2em; margin: 0.3rem 0 0; }
   .tip { color: var(--accent); font-size: 0.85rem; margin: 0.3rem 0 0; }
+  .pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 0.75rem; align-items: end; }
+  @media (max-width: 480px) { .pair { grid-template-columns: 1fr; } }
+  .section-hint { margin: -0.2rem 0 0.8rem; }
   /* itemized investments */
   #investments details { margin-bottom: 0.9rem; }
   #investments summary { cursor: pointer; color: var(--accent); font-size: 0.9rem; padding: 0.4rem 0;
@@ -153,10 +156,32 @@
     <button type="button" id="addEmployer">+ Add another employer (changed jobs this year)</button>
     <p class="warn" id="salaryWarning" role="status"></p>
 
-    <h2>Other income (yearly total)</h2>
-    <label class="field">Other income
-      <span class="hint">bank interest, side income etc. — added to taxable income as-is</span>
+    <h2>Other income (yearly totals)</h2>
+    <p class="hint section-hint">Interest is taxed at your normal rates; tax the bank or post office
+      already cut counts toward what you owe.</p>
+    <div class="pair">
+      <label class="field">Bank / FDR / DPS interest
+        <input type="number" id="bankInterest" min="0" placeholder="0">
+      </label>
+      <label class="field">Tax the bank deducted
+        <input type="number" id="bankTds" min="0" placeholder="0">
+      </label>
+    </div>
+    <div class="pair">
+      <label class="field">Savings certificate (সঞ্চয়পত্র) profit
+        <input type="number" id="savingsInterest" min="0" placeholder="0">
+      </label>
+      <label class="field">Tax deducted at source
+        <input type="number" id="savingsTds" min="0" placeholder="0">
+      </label>
+    </div>
+    <label class="field">Other taxable income
+      <span class="hint">rent, agriculture, side income — already net of their allowances</span>
       <input type="number" id="otherIncome" min="0" placeholder="0">
+    </label>
+    <label class="field">Advance tax paid
+      <span class="hint">e.g. paid when renewing your car's fitness certificate</span>
+      <input type="number" id="advanceTax" min="0" placeholder="0">
     </label>
     <h2>Investments for rebate (this year)</h2>
     <div id="investments"></div>
